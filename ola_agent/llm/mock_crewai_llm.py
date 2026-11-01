@@ -28,6 +28,7 @@ from typing import Any
 from crewai.llms.base_llm import BaseLLM
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
+from ola_agent.budget import charge, check
 from ola_agent.rag.generate import IDK_ANSWER
 
 SLOT_RE = {
@@ -97,6 +98,7 @@ class MockCrewLLM(BaseLLM):
     def call(self, messages, tools=None, callbacks=None, available_functions=None,
              from_task=None, from_agent=None, response_model=None) -> str:
         msgs = [{"role": "user", "content": messages}] if isinstance(messages, str) else list(messages)
+        check("crewai", self.get_input_tokens_count(msgs))  # Task 15: never send a prompt over budget
         task_text = "\n".join(_content(m) for m in msgs if _role(m) == "user")
 
         observation = self._latest_observation(msgs)
@@ -117,6 +119,7 @@ class MockCrewLLM(BaseLLM):
             out = "Thought: I can now compose the final answer.\nFinal Answer: " + self._compose(task_text, response_model)
             kind = "compose"
         self._calls.append({"kind": kind, "output": out})
+        charge(f"crewai:{kind}", self.get_input_tokens_count(msgs), len(out) // 4)
         return out
 
     # --- pitfall 1: read only this mock's own text and what follows it -------------

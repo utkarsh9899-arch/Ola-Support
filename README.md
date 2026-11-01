@@ -292,7 +292,93 @@ instead of the "team lead contacts you within 48 hours" rule; E10 and E04 return
 points because the mock's answer is capped at two sentences and dropped the second relevant one.
 
 ## Part 4: Resilience and governance
-*(in progress)*
+
+Full request path: input guardrails (mask phone, block injection) → token-budget pre-flight → session memory →
+CrewAI crew (with cached grounded generation) → `SupportResponse` validation → output groundedness check →
+Autogen review → JSON-Lines log.
+
+### Task 14: Autogen review stage
+`ola_agent/review.py` builds a 2-agent team for every draft:
+
+```python
+reviewer = AssistantAgent("policy_compliance_reviewer", model_client=client, system_message=...)
+editor   = AssistantAgent("final_editor", model_client=client, system_message=...,
+                          output_content_type=ReviewVerdict)          # approved, final_answer, reason
+team = RoundRobinGroupChat([reviewer, editor], max_turns=2,
+                           custom_message_types=[StructuredMessage[ReviewVerdict]])
+```
+
+The task message is the CrewAI Composer's draft plus the original retrieved context and ticket record. Under
+`MOCK_LLM` the agents use `MockReviewClient` (an `autogen_core` `ChatCompletionClient`): the reviewer checks
+every draft sentence against the context and record and lists unsupported ones; the editor, asked for
+`json_output=ReviewVerdict`, approves unchanged or removes them. Findings are read only from the reviewer's
+own message, never from a system prompt. The last message of the run is a
+`StructuredMessage[ReviewVerdict]`, validated again in code. Every run has exactly 3 messages (task + 2 agent
+turns). ([`transcripts/task14_review.txt`](transcripts/task14_review.txt))
+
+| Case | Draft | Verdict |
+|---|---|---|
+| 1 | real crew draft: "Refunds above INR 2,000 require approval from the city operations manager …" | `approved=true`, final answer identical to the draft |
+| 2 | real crew ticket + compensation draft with an injected "Ola refunds 500 percent of the fare within 5 minutes for any delay." | `approved=false`, that sentence removed, the 4 grounded sentences kept, reason names it |
+
+The transcript also shows that the same team built **without** `custom_message_types` fails with
+`ValueError: Message type … StructuredMessage[ReviewVerdict] is not registered`.
+
+### Task 15: Four-layer AI governance
+([`transcripts/task15_governance.txt`](transcripts/task15_governance.txt))
+
+| Layer | Controls in this system |
+|---|---|
+| Data | phone numbers masked before the model, memory, cache and logs; all data fabricated |
+| Model | deterministic `MOCK_LLM`; output groundedness check; independent Autogen review |
+| **Application** | **least autonomy for tools; risk classification** |
+| **Runtime** | **per-request token/cost budget cap**; JSON-Lines audit log with trace ids |
+
+**Least autonomy.** `governance.TOOL_ACL` maps each tool to the only agent roles allowed to hold it;
+`check_support_ticket_status` is allowed for `{"Lookup Agent"}` only. Every agent in the crew is built through
+`governance.make_agent`, which checks each tool against `TOOL_ACL` before it is attached and raises
+`ToolPermissionError` otherwise, so the lookup tool cannot even be wired to the Retrieval Agent or the Response
+Composer. As a second, runtime layer, the tool records the role it was bound to and re-checks `TOOL_ACL` every
+time it runs, so a tool instance created or passed around outside `make_agent` refuses to execute. The
+Composer can therefore only use what the Lookup Agent returned and can never query ticket records itself. The
+transcript shows both wiring attempts and a direct call on an unbound instance blocked, with 0 tool executions.
+
+**Risk classification: Medium.** Under the Low / Medium / High scheme this system is a customer-support-ticket
+assistant, which the scheme places at Medium: its answers reach riders and drivers directly and can shape what
+they expect about refunds, credits and escalations, so a wrong answer has real but recoverable impact. It is
+not Low, because it does more than summarise or transcribe: it gives policy answers and reads individual ticket
+records. It is not High: it handles no medical data and makes no hiring decisions, and although it discusses
+refunds it never moves money or reads payment details (payment fields are out of scope and only fabricated
+examples exist), and the ticket tool is read-only. Medium risk is why it carries input guardrails, an output
+groundedness check, an independent review stage, least-autonomy tool access, a per-request budget and masked
+audit logs. It would become High if it could issue refunds or credits itself, or process real card or bank
+details.
+
+**Runtime budget cap.** Every model call (CrewAI agents, grounded generation, Autogen reviewers) is metered
+per request (4 characters ≈ 1 token, the same estimate CrewAI uses without a tokenizer). Measured normal
+requests use 2,946 (refused) to 6,407 (ticket + policy) tokens, so the cap is **10,000 tokens per request**
+(~$0.02 at a notional $0.002/1K tokens). Two independent checks:
+1. **Pre-flight**: projected = 6,500 baseline + 6 × tokens(input); over the cap → rejected before any model
+   call. A deliberately oversized 20,160-character request projects 36,740 tokens and is **rejected** with
+   0 tool calls; through the API it returns **HTTP 413**.
+2. **Runtime metering**: each model call is checked *before* it is sent and charged after; a call that would
+   cross the cap is refused, and CrewAI task retries are disabled (`max_retry_limit=0`) so a budget stop is
+   never retried. With pre-flight bypassed on purpose and a 2,000-token cap, a normal request is aborted at
+   model call #3 with 1,767 tokens used, so metered usage never exceeds the cap.
+
+### Task 16: Response caching
+`ola_agent/rag/cache.py` caches the grounded-generation step in memory, keyed by normalised query text
+(lower-case, punctuation stripped, whitespace collapsed) plus collection, k and threshold. Only masked text is
+ever a key, live ticket lookups are never cached, and adding or deleting a document clears the cache.
+([`transcripts/task16_cache.txt`](transcripts/task16_cache.txt))
+
+| | retrieval calls | generation-LLM calls | cache hits | time |
+|---|---|---|---|---|
+| 1st "What is the refund policy if I was charged twice?" | 0 → 1 | 0 → 1 | 0 | ~44 ms |
+| repeat "  what is the REFUND policy if I was charged twice  " | 1 → 1 | 1 → 1 | 0 → 1 | ~0.04 ms |
+
+Through the full pipeline the repeated query still runs the crew, but its RAG tool call is served from the
+cache with 0 retrieval and 0 generation-LLM calls.
 
 ---
 
@@ -319,5 +405,11 @@ fabricated examples are used for all of them.
 | 10 Guardrails | `demos/task10_guardrails.py` | `transcripts/task10_guardrails.txt` |
 | 11 FastAPI + 12 Logging | `demos/task11_12_api.py` | `transcripts/task11_12_api.txt`, `logs/requests.sample.jsonl` |
 | 13 Evaluation | `eval/run_eval.py` | `transcripts/task13_evaluation.txt`, `eval/results.md` |
+| 14 Autogen review | `demos/task14_review.py` | `transcripts/task14_review.txt` |
+| 15 Governance | `demos/task15_governance.py` | `transcripts/task15_governance.txt` |
+| 16 Caching | `demos/task16_cache.py` | `transcripts/task16_cache.txt` |
+
+Regenerate every transcript and the evaluation (each in a fresh process, `MOCK_LLM=1`):
+`python demos/run_all_demos.py`. Apart from timestamps and timings, the output is identical on every run.
 
 Tests: `python -m pytest`

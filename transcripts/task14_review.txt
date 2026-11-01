@@ -1,0 +1,74 @@
+# Transcript: task14_review
+# MOCK_LLM=1  generated 2026-11-01T22:35:40
+
+Team: RoundRobinGroupChat([policy_compliance_reviewer, final_editor], max_turns=2,
+      custom_message_types=[StructuredMessage[ReviewVerdict]])
+      participants=['policy_compliance_reviewer', 'final_editor']  max_turns=2
+Final-Editor: AssistantAgent(..., output_content_type=ReviewVerdict)
+
+====================================================================================================
+CASE 1 - real CrewAI Composer draft (grounded) -> expected: APPROVED UNCHANGED
+====================================================================================================
+Composer draft: Refunds above INR 2,000 require approval from the city operations manager before they are processed. [04_refund_compensation]
+
+[user | TextMessage]
+            DRAFT ANSWER:
+            Refunds above INR 2,000 require approval from the city operations manager before they are processed. [04_refund_compensation]
+            
+            RETRIEVED CONTEXT:
+            [04_refund_compensation] Refunds above INR 2,000 require approval from the city operations manager before they are processed.
+            [04_refund_compensation] Approved refunds return to the original payment method within 5 to 7 business days, or instantly to the Ola Money wallet if the rider chooses that option.
+            [10_vip_handling] VIP status does not change refund eligibility, but the priority desk may raise the service-credit limit for a VIP customer to INR 500 per incident.
+            
+            TICKET RECORD:
+            (none)
+
+[policy_compliance_reviewer | TextMessage]
+            COMPLIANCE REVIEW: checked 1 sentence(s). All sentences are supported; recommend approval.
+UNSUPPORTED_SENTENCES=[]
+
+[final_editor | StructuredMessage[ReviewVerdict]]
+            {"approved":true,"final_answer":"Refunds above INR 2,000 require approval from the city operations manager before they are processed. [04_refund_compensation]","reason":"Policy-Compliance-Reviewer found every sentence supported; approved unchanged."}
+
+ReviewVerdict (validated Pydantic): approved=True
+  final_answer: Refunds above INR 2,000 require approval from the city operations manager before they are processed. [04_refund_compensation]
+  reason      : Policy-Compliance-Reviewer found every sentence supported; approved unchanged.
+  unchanged   : True   | messages in run: 3 (task + 2 agent turns) | model calls: 2
+
+====================================================================================================
+CASE 2 - same kind of draft with an ungrounded claim injected -> expected: REVISED
+====================================================================================================
+Composer draft: Ticket OLA-T-0044 is currently Escalated (priority P3, Account Access), with a resolution time of 10.5 hours. Its escalation score is 0.973 against a threshold of 0.27, so escalation is recommended. Typical triggers are a driver arriving more than 15 minutes late, a missed SLA on the rider's own ticket, or a documented poor-quality ride. [08_service_credits] Compensation for a poor experience, such as a rude driver or an unclean vehicle, is given as service credits rather than cash. [04_refund_compensation] Ola refunds 500 percent of the fare within 5 minutes for any delay.
+
+[user | TextMessage]
+            DRAFT ANSWER:
+            Ticket OLA-T-0044 is currently Escalated (priority P3, Account Access), with a resolution time of 10.5 hours. Its escalation score is 0.973 against a threshold of 0.27, so escalation is recommended. Typical triggers are a driver arriving more than 15 minutes late, a missed SLA on the rider's own ticket, or a documented poor-quality ride. [08_service_credits] Compensation for a poor experience, such as a rude driver or an unclean vehicle, is given as service credits rather than cash. [04_refund_compensation] Ola refunds 500 percent of the fare within 5 minutes for any delay.
+            
+            RETRIEVED CONTEXT:
+            [08_service_credits] Typical triggers are a driver arriving more than 15 minutes late, a missed SLA on the rider's own ticket, or a documented poor-quality ride.
+            [04_refund_compensation] Compensation for a poor experience, such as a rude driver or an unclean vehicle, is given as service credits rather than cash.
+            [04_refund_compensation] A partial refund of the difference is issued when the final fare exceeds the upfront estimate by more than 20 percent and the rider did not request a route change.
+            
+            TICKET RECORD:
+            {"source": "ticket_lookup", "record_id": "OLA-T-0044", "found": true, "status": "Escalated", "priority": "P3", "category": "Account Access", "resolution_time_hours": 10.5, "days_since_created": 28, "escalated": true, "escalation_score": 0.973, "escalation_threshold": 0.27, "recommend_escalation": true}
+
+[policy_compliance_reviewer | TextMessage]
+            COMPLIANCE REVIEW: checked 5 sentence(s). 1 sentence(s) are not supported by the retrieved context or ticket record.
+UNSUPPORTED_SENTENCES=["Ola refunds 500 percent of the fare within 5 minutes for any delay."]
+
+[final_editor | StructuredMessage[ReviewVerdict]]
+            {"approved":false,"final_answer":"Ticket OLA-T-0044 is currently Escalated (priority P3, Account Access), with a resolution time of 10.5 hours. Its escalation score is 0.973 against a threshold of 0.27, so escalation is recommended. Typical triggers are a driver arriving more than 15 minutes late, a missed SLA on the rider's own ticket, or a documented poor-quality ride. [08_service_credits] Compensation for a poor experience, such as a rude driver or an unclean vehicle, is given as service credits rather than cash. [04_refund_compensation]","reason":"Removed 1 sentence(s) not supported by the retrieved context: \"Ola refunds 500 percent of the fare within 5 minutes for any delay.\""}
+
+ReviewVerdict (validated Pydantic): approved=False
+  final_answer: Ticket OLA-T-0044 is currently Escalated (priority P3, Account Access), with a resolution time of 10.5 hours. Its escalation score is 0.973 against a threshold of 0.27, so escalation is recommended. Typical triggers are a driver arriving more than 15 minutes late, a missed SLA on the rider's own ticket, or a documented poor-quality ride. [08_service_credits] Compensation for a poor experience, such as a rude driver or an unclean vehicle, is given as service credits rather than cash. [04_refund_compensation]
+  reason      : Removed 1 sentence(s) not supported by the retrieved context: "Ola refunds 500 percent of the fare within 5 minutes for any delay."
+  unchanged   : False   | messages in run: 3 (task + 2 agent turns) | model calls: 2
+
+====================================================================================================
+Why custom_message_types is required (same team without it):
+====================================================================================================
+RuntimeError: ValueError: Message type <class 'autogen_agentchat.messages.StructuredMessage[ReviewVerdict]'> is not registered.
+Traceback:
+Traceback (most recent call last):
+
+  File "C:\Users\UTKARSH\.venvs\ola-sup

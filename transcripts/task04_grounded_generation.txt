@@ -1,5 +1,5 @@
 # Transcript: task04_grounded_generation
-# MOCK_LLM=1  generated 2026-11-01T21:45:29
+# MOCK_LLM=1  generated 2026-11-01T22:31:09
 
 MOCK_LLM=True | top-k=3 | calibrated IDK threshold=0.37
 

@@ -1,5 +1,5 @@
 # Transcript: task06_ticket_tool
-# MOCK_LLM=1  generated 2026-11-01T21:48:28
+# MOCK_LLM=1  generated 2026-11-01T22:31:56
 
 escalation_score = 0.6 * escalated + 0.4 * min(days_since_created / 30, 1)
 

@@ -1,5 +1,5 @@
 # Transcript: task03_indexing
-# MOCK_LLM=1  generated 2026-11-01T21:32:38
+# MOCK_LLM=1  generated 2026-11-01T22:30:12
 
 Embedding model: sentence-transformers/all-MiniLM-L6-v2 (local, free)
 Strategy A - fixed-size: 200 chars, 50 chars overlap (edges snapped to spaces)

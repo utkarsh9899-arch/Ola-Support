@@ -1,5 +1,5 @@
 # Transcript: task13_evaluation
-# MOCK_LLM=1  generated 2026-11-01T22:15:45
+# MOCK_LLM=1  generated 2026-11-01T22:35:05
 
 LLM-as-judge evaluation | MOCK_LLM=True | judge=mock-judge-v1 | 15 queries
 All 12 required KB topics covered: True | out-of-scope/edge queries: 3

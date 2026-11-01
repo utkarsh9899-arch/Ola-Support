@@ -1,0 +1,29 @@
+# Transcript: task16_cache
+# MOCK_LLM=1  generated 2026-11-01T22:36:46
+
+normalize('What is the refund policy if I was charged twice?') = 'what is the refund policy if i was charged twice'
+normalize('  what is the REFUND policy if I was charged twice  ') = 'what is the refund policy if i was charged twice'
+
+====================================================================================================
+A) Grounded-generation step called directly
+====================================================================================================
+before          : {'retrieval_calls': 0, 'generation_llm_calls': 0, 'cache_hits': 0, 'cache_misses': 0}
+after 1st query : {'retrieval_calls': 1, 'generation_llm_calls': 1, 'cache_hits': 0, 'cache_misses': 1}   (48.9 ms)  <- MISS: retrieval + LLM call
+after 2nd query : {'retrieval_calls': 1, 'generation_llm_calls': 1, 'cache_hits': 1, 'cache_misses': 1}   (0.04 ms)  <- HIT: no retrieval, no LLM call
+generation-LLM calls made: 1st query = 1, repeat = 0 (the redundant call was avoided)
+same answer     : True   speed-up: 1247x
+
+====================================================================================================
+B) Through the full pipeline (guardrails -> crew -> RAG tool -> review)
+====================================================================================================
+1st    query 'How long are closed tickets stored?'
+       RAG tool invoked by Retrieval Agent: 1x | retrieval calls +1 | generation LLM calls +1 | cache hits +0 | 717 ms total
+       answer: A customer may request deletion of their closed tickets, which is completed within 30 days unless a legal hold applies. ...
+repeat query 'HOW LONG ARE CLOSED TICKETS STORED?  '
+       RAG tool invoked by Retrieval Agent: 1x | retrieval calls +0 | generation LLM calls +0 | cache hits +1 | 346 ms total
+       answer: A customer may request deletion of their closed tickets, which is completed within 30 days unless a legal hold applies. ...
+
+The crew still runs on the repeat (agents, review), but the grounded-generation step is served from
+the cache: zero retrieval calls and zero generation-LLM calls for the repeated query.
+
+Cache size: 2 entries | final counters: {'retrieval_calls': 2, 'generation_llm_calls': 2, 'cache_hits': 2, 'cache_misses': 2}

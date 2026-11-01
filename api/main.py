@@ -19,17 +19,18 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import config  # noqa: E402  (offline / no-telemetry env first)
 
-from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect  # noqa: E402
+from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect  # noqa: E402
 from fastapi.concurrency import run_in_threadpool  # noqa: E402
 from pydantic import BaseModel, Field  # noqa: E402
 
 from ola_agent import guardrails  # noqa: E402
+from ola_agent.budget import BudgetExceededError  # noqa: E402
 from ola_agent.logging_utils import log_request, new_trace_id  # noqa: E402
 from ola_agent.memory import ask  # noqa: E402
 from ola_agent.pipeline import PipelineResult  # noqa: E402
 from ola_agent.rag.index import add_document, build_index  # noqa: E402
 from ola_agent.rag.kb import Document, split_sentences  # noqa: E402
-from ola_agent.schemas import SupportResponse  # noqa: E402
+from ola_agent.schemas import ReviewVerdict, SupportResponse  # noqa: E402
 
 
 # --- Pydantic request/response models --------------------------------------------
@@ -42,6 +43,8 @@ class AskResponse(BaseModel):
     trace_id: str
     session_id: str
     response: SupportResponse
+    review: ReviewVerdict | None = Field(default=None, description="Autogen review-stage verdict, when a draft was reviewed.")
+    tokens_used: int = Field(description="Metered tokens across every model call (budget cap applies).")
     latency_ms: float
 
 
@@ -108,9 +111,15 @@ def health() -> HealthResponse:
 def ask_endpoint(body: AskRequest, request: Request) -> AskResponse:
     start = time.perf_counter()
     session_id = body.session_id or f"http-{uuid.uuid4().hex[:12]}"
-    result = ask(body.query, session_id)
-    request.state.log_fields = _result_fields(result, session_id)
+    try:
+        result = ask(body.query, session_id)
+    except BudgetExceededError as exc:
+        request.state.log_fields = {"session.id": session_id, "query.masked": body.query[:200],
+                                    "budget.rejected": True, "budget.tokens": exc.tokens, "budget.limit": exc.limit}
+        raise HTTPException(status_code=413, detail=str(exc)) from exc
+    request.state.log_fields = {**_result_fields(result, session_id), "budget.tokens_used": result.tokens_used}
     return AskResponse(trace_id=request.state.trace_id, session_id=session_id, response=result.response,
+                       review=result.review, tokens_used=result.tokens_used,
                        latency_ms=round((time.perf_counter() - start) * 1000, 2))
 
 
@@ -133,7 +142,14 @@ async def ws_chat(websocket: WebSocket, session_id: str | None = None):
         while True:
             message = await websocket.receive_text()
             trace_id, start = new_trace_id(), time.perf_counter()
-            result = await run_in_threadpool(ask, message, session_id)
+            try:
+                result = await run_in_threadpool(ask, message, session_id)
+            except BudgetExceededError as exc:
+                log_request("ws_message", trace_id, (time.perf_counter() - start) * 1000,
+                            **{"url.path": "/ws/chat", "session.id": session_id, "budget.rejected": True,
+                               "budget.tokens": exc.tokens, "budget.limit": exc.limit})
+                await websocket.send_json({"trace_id": trace_id, "session_id": session_id, "error": str(exc)})
+                continue
             turns += 1
             log_request("ws_message", trace_id, (time.perf_counter() - start) * 1000,
                         **{"url.path": "/ws/chat", **_result_fields(result, session_id), "ws.turn": turns})

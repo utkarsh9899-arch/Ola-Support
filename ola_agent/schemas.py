@@ -8,6 +8,14 @@ from pydantic import BaseModel, Field, field_validator
 Intent = Literal["policy", "ticket_status", "mixed", "out_of_scope", "blocked"]
 
 
+class ReviewVerdict(BaseModel):
+    """Structured output of the Autogen Final-Editor agent (Task 14)."""
+
+    approved: bool = Field(description="True when the draft is approved unchanged.")
+    final_answer: str = Field(min_length=1, description="The draft unchanged, or the revised answer.")
+    reason: str = Field(min_length=1, description="Why the draft was approved or what was changed.")
+
+
 class SupportResponse(BaseModel):
     """Every crew response must conform to this schema (validated in code after every kickoff)."""
 

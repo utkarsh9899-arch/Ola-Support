@@ -10,7 +10,7 @@ from langchain_core.chat_history import InMemoryChatMessageHistory
 from langchain_core.runnables import RunnableLambda
 from langchain_core.runnables.history import RunnableWithMessageHistory
 
-from ola_agent import guardrails
+from ola_agent import budget, guardrails
 from ola_agent.pipeline import PipelineResult, answer_masked, blocked_result
 
 _STORE: dict[str, InMemoryChatMessageHistory] = {}
@@ -43,13 +43,22 @@ chat_chain = RunnableWithMessageHistory(
 )
 
 
-def ask(message: str, session_id: str) -> PipelineResult:
-    """Guard the raw input, then answer it inside the session's memory."""
+def ask(message: str, session_id: str, token_limit: int | None = None,
+        skip_preflight: bool = False) -> PipelineResult:
+    """Guard the raw input, check the token budget, then answer it inside the session's memory.
+
+    Raises budget.BudgetExceededError when the request is projected to exceed, or does exceed, the cap.
+    `skip_preflight` exists only to demonstrate that the runtime meter alone also stops a request.
+    """
     guard = guardrails.guard_input(message)
     if guard.blocked:
         return blocked_result(guard)  # never reaches the crew or the session history
-    out = chat_chain.invoke(
-        {"question": guard.masked_text, "input_flags": guard.flags},
-        config={"configurable": {"session_id": session_id}},
-    )
-    return out["result"]
+    projected = 0 if skip_preflight else budget.preflight(guard.masked_text, token_limit)
+    with budget.request_budget(token_limit) as tracker:
+        out = chat_chain.invoke(
+            {"question": guard.masked_text, "input_flags": guard.flags},
+            config={"configurable": {"session_id": session_id}},
+        )
+    result: PipelineResult = out["result"]
+    result.tokens_projected, result.tokens_used = projected, tracker.used
+    return result

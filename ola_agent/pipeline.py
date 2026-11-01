@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 
 from ola_agent import guardrails
 from ola_agent.routing import extract_slots, resolve_references
-from ola_agent.schemas import SupportResponse
+from ola_agent.schemas import ReviewVerdict, SupportResponse
 
 CLARIFY_ANSWER = "Which ticket do you mean? Please share the ticket id (for example OLA-T-0012) and I'll check it."
 
@@ -23,6 +23,9 @@ class PipelineResult:
     lookup: dict | None = None  # Lookup Agent's tool output when it ran
     notes: list[str] = field(default_factory=list)
     crew_ran: bool = False
+    review: ReviewVerdict | None = None  # Autogen review-stage verdict (Task 14)
+    tokens_projected: int = 0  # pre-flight budget projection (Task 15)
+    tokens_used: int = 0  # metered tokens across every model call in this request (Task 15)
 
     @property
     def context(self) -> list[dict]:
@@ -60,7 +63,24 @@ def answer_masked(masked_message: str, history_texts: list[str], input_flags: li
                                                "guardrail_flags": list(input_flags) + response.guardrail_flags})
     result = PipelineResult(response=response, masked_message=masked_message, retrieval=retrieval, lookup=lookup,
                             notes=resolution.notes, crew_ran=True)
-    return apply_output_guard(result)
+    return apply_review(apply_output_guard(result))
+
+
+def apply_review(result: PipelineResult) -> PipelineResult:
+    """Send the Composer's draft + retrieved context to the Autogen review team (Task 14)."""
+    if not result.crew_ran or result.response.refused:
+        return result  # refusals make no claims; nothing to review
+    from ola_agent.review import review
+
+    verdict = review(result.response.answer, result.context, result.lookup).verdict
+    result.review = verdict
+    if not verdict.approved:
+        result.response = SupportResponse.model_validate({
+            **result.response.model_dump(), "answer": verdict.final_answer,
+            "guardrail_flags": result.response.guardrail_flags + ["review_revised"],
+        })
+        result.notes.append(f"review stage revised the draft: {verdict.reason}")
+    return result
 
 
 def apply_output_guard(result: PipelineResult) -> PipelineResult:

@@ -47,8 +47,23 @@ def build_prompt(question: str, hits: list[Hit]) -> str:
 
 
 def generate_answer(query: str, collection: str | None = None, k: int = config.TOP_K,
-                    threshold: float = config.SIMILARITY_THRESHOLD) -> GroundedAnswer:
+                    threshold: float = config.SIMILARITY_THRESHOLD, use_cache: bool = True) -> GroundedAnswer:
+    """Cached front door to grounded generation (Task 16): a hit skips retrieval and the LLM call."""
+    from ola_agent.rag.cache import GROUNDED_CACHE
+
     collection = collection or config.DEPLOYED_COLLECTION or config.COLLECTION_SENTENCE
+    if not use_cache:
+        return _generate(query, collection, k, threshold)
+    key = GROUNDED_CACHE.key(query, collection, k, threshold)
+    cached = GROUNDED_CACHE.get(key)
+    if cached is not None:
+        return cached.model_copy(update={"query": query})
+    answer = _generate(query, collection, k, threshold)
+    GROUNDED_CACHE.put(key, answer)
+    return answer
+
+
+def _generate(query: str, collection: str, k: int, threshold: float) -> GroundedAnswer:
     hits = retrieve(query, collection, k)
     top = hits[0].similarity if hits else 0.0
     if top < threshold:

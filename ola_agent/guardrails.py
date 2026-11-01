@@ -77,6 +77,23 @@ class GroundednessResult:
     unsupported_sentences: list[str] = field(default_factory=list)
 
 
+FACT_TOKEN_RE = re.compile(r"OLA-T-\d{4}|\bP[1-4]\b|\d+(?:\.\d+)?")
+SENTENCE_SPLIT = re.compile(r"(?<=[.!?])\s+")
+
+
+def answer_sentences(answer: str) -> list[str]:
+    return [s.strip() for s in SENTENCE_SPLIT.split(CITATION_RE.sub("", answer)) if s.strip()]
+
+
+def sentence_supported(sentence: str, context_text: str, record_text: str, no_claim: set[str] = frozenset()) -> bool:
+    """A sentence is supported when it is verbatim policy context, a fixed no-claim sentence, or a ticket
+    sentence whose every id / priority / number appears in the ticket record."""
+    if sentence in no_claim or sentence in context_text:
+        return True
+    tokens = FACT_TOKEN_RE.findall(sentence)
+    return bool(record_text and tokens) and all(t in record_text for t in tokens)
+
+
 def split_cited_sentences(answer: str) -> list[tuple[str, str]]:
     """'Sentence one. [doc_a] Sentence two. [doc_b]' -> [(sentence, doc_id), ...] for cited sentences."""
     out, pos = [], 0

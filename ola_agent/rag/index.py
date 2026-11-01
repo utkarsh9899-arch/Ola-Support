@@ -68,11 +68,18 @@ def build_index(docs: list[Document] | None = None) -> dict[str, int]:
 
 def add_document(doc: Document) -> dict[str, int]:
     """Chunk one new document both ways and upsert it into both collections (POST /add-document)."""
-    return build_index([doc])
+    from ola_agent.rag.cache import GROUNDED_CACHE
+
+    counts = build_index([doc])
+    GROUNDED_CACHE.clear()  # cached answers may no longer reflect the knowledge base
+    return counts
 
 
 def delete_document(doc_id: str) -> dict[str, int]:
     """Remove every chunk of one document from both collections."""
+    from ola_agent.rag.cache import GROUNDED_CACHE
+
+    GROUNDED_CACHE.clear()
     removed = {}
     for name in COLLECTIONS.values():
         col = get_collection(name)
@@ -83,7 +90,11 @@ def delete_document(doc_id: str) -> dict[str, int]:
     return removed
 
 
+RETRIEVAL_CALLS = {"count": 0}  # evidence counter for the cache demo (Task 16)
+
+
 def retrieve(query: str, collection_name: str, k: int = config.TOP_K) -> list[Hit]:
+    RETRIEVAL_CALLS["count"] += 1
     res = get_collection(collection_name).query(query_embeddings=embed([query]), n_results=k)
     return [
         Hit(chunk_id=cid, doc_id=meta["doc_id"], title=meta["title"], text=doc, similarity=round(1.0 - dist, 4))

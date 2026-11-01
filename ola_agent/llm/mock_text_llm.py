@@ -48,6 +48,14 @@ class MockTextLLM:
         self.call_count = 0
 
     def complete(self, prompt: str) -> str:
+        from ola_agent.budget import charge, check
+
+        check("generation", len(prompt) // 4)
+        answer = self._complete(prompt)
+        charge("generation", len(prompt) // 4, len(answer) // 4)
+        return answer
+
+    def _complete(self, prompt: str) -> str:
         self.call_count += 1
         context_m, question_m = CONTEXT_RE.search(prompt), QUESTION_RE.search(prompt)
         if not context_m or not question_m:

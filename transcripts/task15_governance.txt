@@ -1,0 +1,71 @@
+# Transcript: task15_governance
+# MOCK_LLM=1  generated 2026-11-01T22:36:12
+
+FOUR-LAYER GOVERNANCE MODEL
+  Data layer       : phone numbers masked before the model, memory, cache and logs; fabricated data only
+  Model layer      : deterministic MOCK_LLM; output groundedness check; independent Autogen review
+  Application layer: least autonomy for tools (below); risk classification (below)
+  Runtime layer    : per-request token/cost budget cap (below); JSON-Lines audit log with trace ids
+
+====================================================================================================
+APPLICATION LAYER - least autonomy
+====================================================================================================
+TOOL_ACL = {'check_support_ticket_status': {'Lookup Agent'}, 'ola_policy_rag_search': {'Retrieval Agent'}}
+
+  wired: Retrieval Agent    tools=['ola_policy_rag_search']
+  wired: Lookup Agent       tools=['check_support_ticket_status']
+  wired: Response Composer  tools=[]
+  agents holding check_support_ticket_status: ['Lookup Agent']
+
+  wiring lookup tool to Response Composer: BLOCKED -> Least-autonomy violation: agent role 'Response Composer' may not use tool 'check_support_ticket_status' (allowed: ['Lookup Agent']).
+  wiring lookup tool to Retrieval Agent: BLOCKED -> Least-autonomy violation: agent role 'Retrieval Agent' may not use tool 'check_support_ticket_status' (allowed: ['Lookup Agent']).
+  calling an unbound lookup-tool instance directly: BLOCKED at runtime -> Least-autonomy violation: agent role None may not use tool 'check_support_ticket_status' (allowed: ['Lookup Agent']).
+  lookup tool executions during the blocked attempts: 0
+
+LEAST-AUTONOMY GUARD (Application layer).
+`governance.TOOL_ACL` maps each tool to the only agent roles allowed to hold it; check_support_ticket_status
+is allowed for {'Lookup Agent'} only. Every agent in the crew is built through `governance.make_agent`, which
+checks each tool against TOOL_ACL before it is attached and raises ToolPermissionError otherwise, so the
+lookup tool cannot even be wired to the Retrieval Agent or the Response Composer. As a second, runtime layer,
+the tool records the role it was bound to and re-checks TOOL_ACL every time it runs, so a tool instance that
+was created or passed around outside make_agent refuses to execute. The Composer therefore can only use what
+the Lookup Agent returned; it can never query ticket records itself.
+
+====================================================================================================
+APPLICATION LAYER - risk classification
+====================================================================================================
+RISK LEVEL: MEDIUM.
+Under the Low / Medium / High scheme, this system is a customer-support-ticket assistant, which the scheme
+places at Medium: its answers reach riders and drivers directly and can influence what they expect about
+refunds, credits and escalations, so a wrong answer has real but recoverable customer impact. It is not Low,
+because it does more than summarise or transcribe - it gives policy answers and reads individual ticket
+records. It is not High: it handles no medical data and makes no hiring decisions, and although it talks
+about refunds it never moves money or reads payment details (payment fields are out of scope and only
+fabricated examples exist), and the ticket tool is read-only. Medium risk is why it carries input
+guardrails, an output groundedness check, an independent Autogen review stage, least-autonomy tool access,
+a per-request budget and masked audit logs. It would become High if it were allowed to issue refunds or
+credits itself, or to process real card or bank details.
+
+====================================================================================================
+RUNTIME LAYER - per-request token / cost budget
+====================================================================================================
+cap: 10000 tokens per request (~$0.0200 at a notional $0.002/1K tokens); tokens estimated at 4 chars/token
+pre-flight projection = 6500 baseline + 6 x tokens(input)
+
+Measured usage of normal requests (metered across every model call):
+   2946 used /  6584 projected / 10000 cap  <- Can you book me a flight from Delhi to Goa next Friday?
+   3353 used /  6560 projected / 10000 cap  <- What is the status of ticket OLA-T-0044?
+   4327 used /  6566 projected / 10000 cap  <- Who has to approve a refund above INR 2,000?
+   6407 used /  6626 projected / 10000 cap  <- Ticket OLA-T-0044: what compensation do I get if my driver arrives 20 minutes late?
+
+(1) Deliberately oversized request: 20,160 characters (~5,040 tokens)
+    REJECTED -> pre-flight projection: 36740 tokens would exceed the per-request budget of 10000 tokens (~$0.0735 vs cap $0.0200); request rejected.
+    tools/LLM work done for it: 0 tool calls (rejected before the crew ran)
+
+(2) Defence in depth - runtime metering on its own: a normal mixed request under a deliberately
+    small 2,000-token cap, with the pre-flight check bypassed ON PURPOSE for this demonstration
+    ABORTED mid-run -> runtime metering refused model call #3 (crewai, 812 prompt tokens; 1767 already used): 2579 tokens would exceed the per-request budget of 2000 tokens (~$0.0052 vs cap $0.0040); request rejected.
+    tool calls that had run before the abort: {'ola_policy_rag_search': 1, 'check_support_ticket_status': 0}
+
+(3) Same oversized request through the API:
+    POST /ask -> HTTP 413: pre-flight projection: 36740 tokens would exceed the per-request budget of 10000 tokens (~$0.0735 vs cap $0.0200); request rejected....

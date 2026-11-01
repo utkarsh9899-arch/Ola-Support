@@ -1,5 +1,5 @@
 # Transcript: task08_memory_multiturn
-# MOCK_LLM=1  generated 2026-11-01T22:05:19
+# MOCK_LLM=1  generated 2026-11-01T22:32:44
 
 LangChain memory: InMemoryChatMessageHistory per session_id + RunnableWithMessageHistory
 [LangChainDeprecationWarning] RunnableWithMessageHistory is deprecated. Use LangGraph's built-in persistence instead.

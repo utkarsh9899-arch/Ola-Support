@@ -1,5 +1,5 @@
 # Transcript: task05_chunking_eval
-# MOCK_LLM=1  generated 2026-11-01T21:45:07
+# MOCK_LLM=1  generated 2026-11-01T22:31:34
 
 Same 5 in-scope queries as Task 4, top-k=3 chunks, scored at document level.
 

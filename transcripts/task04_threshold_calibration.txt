@@ -1,5 +1,5 @@
 # Transcript: task04_threshold_calibration
-# MOCK_LLM=1  generated 2026-11-01T21:33:28
+# MOCK_LLM=1  generated 2026-11-01T22:30:42
 
 kind  query                                                              ola_kb_fixed  ola_kb_sentence
 in    What is the resolution target for a P2 ticket?                           0.5998           0.6471

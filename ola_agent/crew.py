@@ -34,21 +34,21 @@ def build_crew(verbose: bool = False) -> Crew:
         tools=[rag_tool],
         goal="Find the Ola support-policy text that answers the customer's policy question.",
         backstory="You search Ola's support knowledge base and only report what the policies say.",
-        llm=_llm([rag_tool]), allow_delegation=False, max_iter=3, verbose=verbose,
+        llm=_llm([rag_tool]), allow_delegation=False, max_iter=3, max_retry_limit=0, verbose=verbose,
     )
     lookup_agent = make_agent(
         "Lookup Agent",
         tools=[ticket_tool],
         goal="Look up the status of the customer's support ticket when they give a ticket id.",
         backstory="You are the only agent allowed to read support-ticket records.",
-        llm=_llm([ticket_tool]), allow_delegation=False, max_iter=3, verbose=verbose,
+        llm=_llm([ticket_tool]), allow_delegation=False, max_iter=3, max_retry_limit=0, verbose=verbose,
     )
     composer = make_agent(
         "Response Composer",
         tools=[],
         goal="Combine the retrieval and lookup results into one accurate, grounded answer.",
         backstory="You write the final reply and never add facts that the other agents did not provide.",
-        llm=_llm(response_format=SupportResponse), allow_delegation=False, max_iter=2, verbose=verbose,
+        llm=_llm(response_format=SupportResponse), allow_delegation=False, max_iter=2, max_retry_limit=0, verbose=verbose,
     )
 
     retrieval_task = Task(

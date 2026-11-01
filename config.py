@@ -48,7 +48,9 @@ SIMILARITY_THRESHOLD: float = 0.37
 DEPLOYED_COLLECTION: str = COLLECTION_SENTENCE
 
 # --- Runtime governance (Task 15) --------------------------------------------
-MAX_TOKENS_PER_REQUEST = 1500
+# Measured per-request usage (demos/task15_governance.py): 2,946 (refused) to 6,407 (ticket + policy) tokens.
+# Cap = 10,000 tokens (~55% headroom over the heaviest normal request).
+MAX_TOKENS_PER_REQUEST = 10_000
 COST_PER_1K_TOKENS_USD = 0.002  # notional, for budget reporting only
 
 
