@@ -75,6 +75,11 @@ touches the network.
 | `HF_HUB_OFFLINE=1` | Embedding model is loaded from the local cache only |
 | `MOCK_LLM=1` (default) | Deterministic mock LLMs, no API keys |
 
+**Real-LLM mode is optional and deliberately not wired in.** Every LLM entry point (`MockCrewLLM`,
+`MockTextLLM`, `MockReviewClient`, `MockJudgeLLM`) is selected behind the `MOCK_LLM` flag; with `MOCK_LLM=0`
+those factories raise a clear `NotImplementedError` instead of silently calling an API. Every acceptance
+criterion is met with `MOCK_LLM=1` alone, which is the mode all transcripts use.
+
 ---
 
 ## Part 1: Dataset and RAG core
@@ -381,6 +386,51 @@ Through the full pipeline the repeated query still runs the crew, but its RAG to
 cache with 0 retrieval and 0 generation-LLM calls.
 
 ---
+
+## Verification: fresh clone, zero network
+
+The submission was checked from a **fresh `git clone`** (no `chroma_db/`, nothing cached except the
+embedding model) with `tools/offline_guard/sitecustomize.py` loaded into every Python process. The guard
+blocks and records every DNS lookup or socket connection to anything other than localhost:
+
+```powershell
+$env:PYTHONPATH = "tools\offline_guard"; $env:OFFLINE_GUARD_LOG = "offline_guard.log"
+python demos/run_all_demos.py
+python -m pytest
+```
+
+| Check | Result |
+|---|---|
+| Guard self-test (`urllib` to huggingface.co) | blocked, as expected |
+| `demos/run_all_demos.py` (16 scripts, fresh processes) | 16/16 succeeded |
+| `python -m pytest` | 71 passed |
+| Outbound connections recorded by the guard | **0** |
+| Transcripts from the clone vs the committed ones | 17/17 identical apart from timestamps, timings and trace ids |
+
+## Acceptance criteria checklist
+
+| Criterion | Evidence |
+|---|---|
+| **Part 1** | |
+| `dataset.py` ≥40 tickets, every category ≥3, every status ≥1, escalated 10–30 %, choices in README | 48 tickets, min category 7, min status 5, 18.8 %; [Dataset design choices](#dataset-design-choices-part-1-task-1-for-deterministic-reproduction); `transcripts/task01_dataset.txt` |
+| ≥12 KB documents covering every topic | 12 documents, topic table above; `transcripts/task02_knowledge_base.txt` |
+| Both chunking strategies embedded into two separate collections, both sensible | `ola_kb_fixed` / `ola_kb_sentence`; `transcripts/task03_indexing.txt` |
+| Grounded generation on ≥5 in-scope + 1 out-of-scope fallback | `transcripts/task04_grounded_generation.txt` (threshold calibrated in `task04_threshold_calibration.txt`) |
+| P/R for both collections on the same ≥5 queries, per-query arithmetic, cited recommendation | `transcripts/task05_chunking_eval.txt`; Task 5 table above |
+| **Part 2** | |
+| Lookup + designed, justified `escalation_score` | Task 6 above; `transcripts/task06_ticket_tool.txt` |
+| ≥3-agent crew; RAG and lookup tools invoked on different queries via `.kickoff()` | `transcripts/task07_crew.txt` |
+| Multi-turn memory + separate fresh-conversation transcript | `transcripts/task08_memory_multiturn.txt`, `transcripts/task08_memory_fresh.txt` |
+| Every crew response validated against a Pydantic schema | `SupportResponse`; `transcripts/task09_structured_output.txt` |
+| PII/injection and groundedness guardrails each firing | `transcripts/task10_guardrails.txt` |
+| **Part 3** | |
+| ≥2 HTTP endpoints + WebSocket surviving disconnect, Pydantic models | `transcripts/task11_12_api.txt` |
+| One JSON-Lines entry per request with trace id | `transcripts/task11_12_api.txt`, `logs/requests.sample.jsonl` |
+| Accuracy / Grounding / Completeness / Safety for 15 queries + averages | Task 13 table above; `eval/results.md`; `transcripts/task13_evaluation.txt` |
+| **Part 4** | |
+| Autogen review approves one draft unchanged and revises another, structured verdicts | `transcripts/task14_review.txt` |
+| Least autonomy shown; risk classification justified; oversized request rejected | `transcripts/task15_governance.txt` |
+| Cache hit with before/after evidence | `transcripts/task16_cache.txt` |
 
 ## PII scope
 Phone numbers have a fixed format and are masked by the input guardrail (Task 10) before they reach the
