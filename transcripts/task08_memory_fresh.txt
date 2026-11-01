@@ -1,0 +1,26 @@
+# Transcript: task08_memory_fresh
+# MOCK_LLM=1  generated 2026-11-01T22:05:29
+
+Same process run, NEW session_id 'rider-s2' (a fresh conversation).
+Session 'rider-s1' still holds 6 messages in this process.
+
+--- Turn 1 (session_id='rider-s2') ---
+history messages BEFORE this turn: 0
+USER : Should it be escalated?
+resolution notes : ["'it' has no ticket in history"]
+AGENT: Which ticket do you mean? Please share the ticket id (for example OLA-T-0012) and I'll check it.
+       intent=ticket_status record_id=None sources=[]
+history messages AFTER this turn : 2
+
+--- Turn 2 (session_id='rider-s2') ---
+history messages BEFORE this turn: 2
+history content:
+   | Should it be escalated?
+   | Which ticket do you mean? Please share the ticket id (for example OLA-T-0012) and I'll check it.
+USER : What is the resolution SLA for that priority?
+resolution notes : ["'that priority' has no ticket priority in history"]
+AGENT: Which ticket do you mean? Please share the ticket id (for example OLA-T-0012) and I'll check it.
+       intent=ticket_status record_id=None sources=[]
+history messages AFTER this turn : 4
+
+RESULT: rider-s2 started with 0 history messages; nothing from rider-s1 leaked in (OLA-T-0016/P2 present in s2's first turn: False). State is correctly absent.

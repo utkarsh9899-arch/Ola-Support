@@ -1,0 +1,42 @@
+# Transcript: task08_memory_multiturn
+# MOCK_LLM=1  generated 2026-11-01T22:05:19
+
+LangChain memory: InMemoryChatMessageHistory per session_id + RunnableWithMessageHistory
+[LangChainDeprecationWarning] RunnableWithMessageHistory is deprecated. Use LangGraph's built-in persistence instead.
+
+Session 'rider-s1': state must carry across turns.
+
+[LangChainDeprecationWarning] The class `InMemoryChatMessageHistory` was deprecated in LangChain 1.6.4 and will be removed in 2.0.0 See the short-term memory documentation for recommended alternatives: https://docs.langchain.com/oss/python/langchain/short-term-memory
+--- Turn 1 (session_id='rider-s1') ---
+history messages BEFORE this turn: 0
+USER : Hi, what's the status of my ticket OLA-T-0016?
+resolution notes : ['(none)']
+AGENT: Ticket OLA-T-0016 is currently In Progress (priority P2, Account Access), with a resolution time of 14.0 hours. Its escalation score is 1.0 against a threshold of 0.27, so escalation is recommended.
+       intent=ticket_status record_id=OLA-T-0016 sources=[]
+history messages AFTER this turn : 2
+
+--- Turn 2 (session_id='rider-s1') ---
+history messages BEFORE this turn: 2
+history content:
+   | Hi, what's the status of my ticket OLA-T-0016?
+   | Ticket OLA-T-0016 is currently In Progress (priority P2, Account Access), with a resolution time of 14.0 hours. Its esca...
+USER : Should it be escalated?
+resolution notes : ["'it' resolved from history -> OLA-T-0016"]
+AGENT: Ticket OLA-T-0016 is currently In Progress (priority P2, Account Access), with a resolution time of 14.0 hours. Its escalation score is 1.0 against a threshold of 0.27, so escalation is recommended.
+       intent=ticket_status record_id=OLA-T-0016 sources=[]
+history messages AFTER this turn : 4
+
+--- Turn 3 (session_id='rider-s1') ---
+history messages BEFORE this turn: 4
+history content:
+   | Hi, what's the status of my ticket OLA-T-0016?
+   | Ticket OLA-T-0016 is currently In Progress (priority P2, Account Access), with a resolution time of 14.0 hours. Its esca...
+   | Should it be escalated?
+   | Ticket OLA-T-0016 is currently In Progress (priority P2, Account Access), with a resolution time of 14.0 hours. Its esca...
+USER : What is the resolution SLA for that priority?
+resolution notes : ["'that priority' resolved from history -> P2"]
+AGENT: P2 tickets must receive a first response within 1 hour and be resolved within 24 hours. [02_sla_by_severity] Ola's service-level agreement sets a first-response time and a resolution target for every priority level. [02_sla_by_severity]
+       intent=policy record_id=None sources=['02_sla_by_severity']
+history messages AFTER this turn : 6
+
+RESULT: turn 2 resolved 'it' -> OLA-T-0016 and turn 3 resolved 'that priority' -> P2, both from this session's history only.

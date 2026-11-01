@@ -86,9 +86,13 @@ def kickoff_inputs(slots: Slots) -> dict:
     }
 
 
-def run_crew(message: str, verbose: bool = False) -> tuple[SupportResponse, CrewOutput]:
+def run_crew_slots(slots: Slots, verbose: bool = False) -> tuple[SupportResponse, CrewOutput]:
     """Kick off the crew and validate its output against SupportResponse in code (Task 9)."""
     crew = build_crew(verbose=verbose)
-    output = crew.kickoff(inputs=kickoff_inputs(extract_slots(message)))
+    output = crew.kickoff(inputs=kickoff_inputs(slots))
     response = SupportResponse.model_validate_json(output.raw)
     return response, output
+
+
+def run_crew(message: str, verbose: bool = False) -> tuple[SupportResponse, CrewOutput]:
+    return run_crew_slots(extract_slots(message), verbose=verbose)

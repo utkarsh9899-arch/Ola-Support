@@ -1,0 +1,137 @@
+# Transcript: task09_structured_output
+# MOCK_LLM=1  generated 2026-11-01T22:04:03
+
+SupportResponse JSON schema (attached as Task(output_pydantic=SupportResponse) and as the
+Composer LLM's response_format; re-validated in code after every kickoff):
+{
+ "description": "Every crew response must conform to this schema (validated in code after every kickoff).",
+ "properties": {
+  "answer": {
+   "description": "Final answer shown to the user.",
+   "minLength": 1,
+   "title": "Answer",
+   "type": "string"
+  },
+  "intent": {
+   "enum": [
+    "policy",
+    "ticket_status",
+    "mixed",
+    "out_of_scope",
+    "blocked"
+   ],
+   "title": "Intent",
+   "type": "string"
+  },
+  "sources": {
+   "description": "KB doc_ids the answer is grounded in.",
+   "items": {
+    "type": "string"
+   },
+   "title": "Sources",
+   "type": "array"
+  },
+  "record_id": {
+   "anyOf": [
+    {
+     "type": "string"
+    },
+    {
+     "type": "null"
+    }
+   ],
+   "default": null,
+   "title": "Record Id"
+  },
+  "ticket_status": {
+   "anyOf": [
+    {
+     "type": "string"
+    },
+    {
+     "type": "null"
+    }
+   ],
+   "default": null,
+   "title": "Ticket Status"
+  },
+  "escalation_score": {
+   "anyOf": [
+    {
+     "maximum": 1.0,
+     "minimum": 0.0,
+     "type": "number"
+    },
+    {
+     "type": "null"
+    }
+   ],
+   "default": null,
+   "title": "Escalation Score"
+  },
+  "recommend_escalation": {
+   "anyOf": [
+    {
+     "type": "boolean"
+    },
+    {
+     "type": "null"
+    }
+   ],
+   "default": null,
+   "title": "Recommend Escalation"
+  },
+  "grounded": {
+   "description": "True when every claim comes from retrieved context or the ticket record.",
+   "title": "Grounded",
+   "type": "boolean"
+  },
+  "refused": {
+   "default": false,
+   "title": "Refused",
+   "type": "boolean"
+  },
+  "guardrail_flags": {
+   "items": {
+    "type": "string"
+   },
+   "title": "Guardrail Flags",
+   "type": "array"
+  }
+ },
+ "required": [
+  "answer",
+  "intent",
+  "grounded"
+ ],
+ "title": "SupportResponse",
+ "type": "object"
+} ...
+
+Query: How long are closed tickets stored, and can I ask for mine to be deleted?
+  crew output.pydantic type: SupportResponse
+  SupportResponse.model_validate_json(output.raw): VALID (policy, refused=False)
+  {"answer":"A customer may request deletion of their closed tickets, which is completed within 30 days unless a legal hold applies. [12_data_retention] Support tickets and their chat transcripts are retained for 24 months after the ticket is closed, and are then permanently deleted. [12_data_retention]","intent":"policy","sources":["12_data_retention"],"record_id":null,"ticket_status":null,"escalation_score":null,"recommend_escalation":null,"grounded":true,"refused":false,"guardrail_flags":[]}
+
+Query: What is the status of ticket OLA-T-0005?
+  crew output.pydantic type: SupportResponse
+  SupportResponse.model_validate_json(output.raw): VALID (ticket_status, refused=False)
+  {"answer":"Ticket OLA-T-0005 is currently In Progress (priority P2, Billing), with a resolution time of 9.5 hours. Its escalation score is 0.107 against a threshold of 0.27, so no escalation is needed.","intent":"ticket_status","sources":[],"record_id":"OLA-T-0005","ticket_status":"In Progress","escalation_score":0.107,"recommend_escalation":false,"grounded":true,"refused":false,"guardrail_flags":[]}
+
+Query: Ticket OLA-T-0044: who has to approve a refund above INR 2,000?
+  crew output.pydantic type: SupportResponse
+  SupportResponse.model_validate_json(output.raw): VALID (mixed, refused=False)
+  {"answer":"Ticket OLA-T-0044 is currently Escalated (priority P3, Account Access), with a resolution time of 10.5 hours. Its escalation score is 0.973 against a threshold of 0.27, so escalation is recommended. Refunds above INR 2,000 require approval from the city operations manager before they are processed. [04_refund_compensation]","intent":"mixed","sources":["04_refund_compensation"],"record_id":"OLA-T-0044","ticket_status":"Escalated","escalation_score":0.973,"recommend_escalation":true,"grounded":true,"refused":false,"guardrail_flags":[]}
+
+Query: What will the weather be like in Mumbai tomorrow?
+  crew output.pydantic type: SupportResponse
+  SupportResponse.model_validate_json(output.raw): VALID (out_of_scope, refused=True)
+  {"answer":"I don't know. That question is not covered by Ola's support policies in my knowledge base, so I can't give a grounded answer.","intent":"out_of_scope","sources":[],"record_id":null,"ticket_status":null,"escalation_score":null,"recommend_escalation":null,"grounded":false,"refused":true,"guardrail_flags":[]}
+
+Negative check - a malformed response is rejected:
+  ValidationError with 5 errors:
+    - answer: String should have at least 1 character
+    - intent: Input should be 'policy', 'ticket_status', 'mixed', 'out_of_scope' or 'blocked'
+    - record_id: Value error, record_id must look like OLA-T-0001
+    - escalation_score: Input should be less than or equal to 1
+    - grounded: Input should be a valid boolean, unable to interpret input
