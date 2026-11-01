@@ -1,0 +1,73 @@
+# Transcript: task04_grounded_generation
+# MOCK_LLM=1  generated 2026-11-01T21:45:29
+
+MOCK_LLM=True | top-k=3 | calibrated IDK threshold=0.37
+
+====================================================================================================
+Collection: ola_kb_sentence
+====================================================================================================
+
+Q1 [in-scope] How quickly must a P1 ticket get a first response and be resolved?
+  top-1 similarity = 0.8348 (>= 0.37) -> answered from context
+  retrieved context: ['02_sla_by_severity', '02_sla_by_severity', '02_sla_by_severity']
+  ANSWER: P1 tickets must receive a first response within 15 minutes and be resolved within 4 hours. [02_sla_by_severity]
+
+Q2 [in-scope] Who has to approve a refund above INR 2,000?
+  top-1 similarity = 0.7685 (>= 0.37) -> answered from context
+  retrieved context: ['04_refund_compensation', '04_refund_compensation', '10_vip_handling']
+  ANSWER: Refunds above INR 2,000 require approval from the city operations manager before they are processed. [04_refund_compensation]
+
+Q3 [in-scope] What compensation do I get if my driver arrives 20 minutes late?
+  top-1 similarity = 0.5577 (>= 0.37) -> answered from context
+  retrieved context: ['08_service_credits', '04_refund_compensation', '07_repeat_complaints']
+  ANSWER: Typical triggers are a driver arriving more than 15 minutes late, a missed SLA on the rider's own ticket, or a documented poor-quality ride. [08_service_credits]
+
+Q4 [in-scope] How does Ola keep customers informed during an outage?
+  top-1 similarity = 0.6297 (>= 0.37) -> answered from context
+  retrieved context: ['05_communication_channels', '11_outage_communication', '11_outage_communication']
+  ANSWER: Ola support communicates with riders and drivers only through in-app chat, in-app callback, and email. [05_communication_channels] Customer updates are posted every 30 minutes until service is restored, even when there is no new information to share. [11_outage_communication]
+
+Q5 [in-scope] How long are closed tickets stored, and can I ask for mine to be deleted?
+  top-1 similarity = 0.8321 (>= 0.37) -> answered from context
+  retrieved context: ['12_data_retention', '12_data_retention', '12_data_retention']
+  ANSWER: A customer may request deletion of their closed tickets, which is completed within 30 days unless a legal hold applies. [12_data_retention] Support tickets and their chat transcripts are retained for 24 months after the ticket is closed, and are then permanently deleted. [12_data_retention]
+
+Q6 [OUT-OF-SCOPE] Can you recommend a good movie to watch this weekend?
+  top-1 similarity = 0.1723 (< 0.37) -> FALLBACK (I don't know)
+  retrieved context: []
+  ANSWER: I don't know. That question is not covered by Ola's support policies in my knowledge base, so I can't give a grounded answer.
+
+====================================================================================================
+Collection: ola_kb_fixed
+====================================================================================================
+
+Q1 [in-scope] How quickly must a P1 ticket get a first response and be resolved?
+  top-1 similarity = 0.7197 (>= 0.37) -> answered from context
+  retrieved context: ['02_sla_by_severity', '02_sla_by_severity', '02_sla_by_severity']
+  ANSWER: P1 tickets must receive a first response within 15 minutes and be resolved within 4 hours. [02_sla_by_severity]
+
+Q2 [in-scope] Who has to approve a refund above INR 2,000?
+  top-1 similarity = 0.7685 (>= 0.37) -> answered from context
+  retrieved context: ['04_refund_compensation', '04_refund_compensation', '10_vip_handling']
+  ANSWER: Refunds above INR 2,000 require approval from the city operations manager before they are processed. [04_refund_compensation]
+
+Q3 [in-scope] What compensation do I get if my driver arrives 20 minutes late?
+  top-1 similarity = 0.5499 (>= 0.37) -> answered from context
+  retrieved context: ['08_service_credits', '07_repeat_complaints', '08_service_credits']
+  ANSWER: Typical triggers are a driver arriving more than 15 minutes late, a missed SLA on the rider's own ticket, or a documented poor-quality ride. [08_service_credits]
+
+Q4 [in-scope] How does Ola keep customers informed during an outage?
+  top-1 similarity = 0.6013 (>= 0.37) -> answered from context
+  retrieved context: ['05_communication_channels', '11_outage_communication', '11_outage_communication']
+  ANSWER: Ola support communicates with riders and drivers only through in-app chat, in-app callback, and email. [05_communication_channels]
+
+Q5 [in-scope] How long are closed tickets stored, and can I ask for mine to be deleted?
+  top-1 similarity = 0.7306 (>= 0.37) -> answered from context
+  retrieved context: ['12_data_retention', '12_data_retention', '12_data_retention']
+  ANSWER: A customer may request deletion of their closed tickets, which is completed within 30 days unless a legal hold applies. [12_data_retention] Support tickets and their chat transcripts are retained for 24 months after the ticket is closed, and are then permanently deleted. [12_data_retention]
+
+Q6 [OUT-OF-SCOPE] Can you recommend a good movie to watch this weekend?
+  top-1 similarity = 0.1338 (< 0.37) -> FALLBACK (I don't know)
+  retrieved context: []
+  ANSWER: I don't know. That question is not covered by Ola's support policies in my knowledge base, so I can't give a grounded answer.
+

@@ -43,8 +43,9 @@ TOP_K = 3
 # collections -> midpoint (0.3072 + 0.4321) / 2 = 0.3696, rounded to 0.37.
 SIMILARITY_THRESHOLD: float = 0.37
 
-# Filled in after the chunking evaluation (Task 5).
-DEPLOYED_COLLECTION: str | None = None
+# Chosen by the chunking evaluation (Task 5, transcripts/task05_chunking_eval.txt):
+# sentence-based P=0.733 R=0.900 vs fixed-size P=0.700 R=0.800.
+DEPLOYED_COLLECTION: str = COLLECTION_SENTENCE
 
 # --- Runtime governance (Task 15) --------------------------------------------
 MAX_TOKENS_PER_REQUEST = 1500

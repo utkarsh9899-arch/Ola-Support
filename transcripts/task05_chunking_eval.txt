@@ -1,0 +1,88 @@
+# Transcript: task05_chunking_eval
+# MOCK_LLM=1  generated 2026-11-01T21:45:07
+
+Same 5 in-scope queries as Task 4, top-k=3 chunks, scored at document level.
+
+====================================================================================================
+Collection: ola_kb_fixed
+====================================================================================================
+Q1: How quickly must a P1 ticket get a first response and be resolved?
+    top-3 chunks -> parent docs : ['02_sla_by_severity', '02_sla_by_severity', '02_sla_by_severity']
+    after dedup (retrieved)    : ['02_sla_by_severity']
+    relevant (gold)            : ['02_sla_by_severity']
+    relevant ∩ retrieved       : ['02_sla_by_severity']
+    P = 1/1 = 1.00   R = 1/1 = 1.00
+Q2: Who has to approve a refund above INR 2,000?
+    top-3 chunks -> parent docs : ['04_refund_compensation', '04_refund_compensation', '10_vip_handling']
+    after dedup (retrieved)    : ['04_refund_compensation', '10_vip_handling']
+    relevant (gold)            : ['03_escalation_matrix', '04_refund_compensation']
+    relevant ∩ retrieved       : ['04_refund_compensation']
+    P = 1/2 = 0.50   R = 1/2 = 0.50
+Q3: What compensation do I get if my driver arrives 20 minutes late?
+    top-3 chunks -> parent docs : ['08_service_credits', '07_repeat_complaints', '08_service_credits']
+    after dedup (retrieved)    : ['08_service_credits', '07_repeat_complaints']
+    relevant (gold)            : ['04_refund_compensation', '08_service_credits']
+    relevant ∩ retrieved       : ['08_service_credits']
+    P = 1/2 = 0.50   R = 1/2 = 0.50
+Q4: How does Ola keep customers informed during an outage?
+    top-3 chunks -> parent docs : ['05_communication_channels', '11_outage_communication', '11_outage_communication']
+    after dedup (retrieved)    : ['05_communication_channels', '11_outage_communication']
+    relevant (gold)            : ['11_outage_communication']
+    relevant ∩ retrieved       : ['11_outage_communication']
+    P = 1/2 = 0.50   R = 1/1 = 1.00
+Q5: How long are closed tickets stored, and can I ask for mine to be deleted?
+    top-3 chunks -> parent docs : ['12_data_retention', '12_data_retention', '12_data_retention']
+    after dedup (retrieved)    : ['12_data_retention']
+    relevant (gold)            : ['12_data_retention']
+    relevant ∩ retrieved       : ['12_data_retention']
+    P = 1/1 = 1.00   R = 1/1 = 1.00
+
+Mean precision = (1.00 + 0.50 + 0.50 + 0.50 + 1.00) / 5 = 0.700
+Mean recall    = (1.00 + 0.50 + 0.50 + 1.00 + 1.00) / 5 = 0.800
+
+====================================================================================================
+Collection: ola_kb_sentence
+====================================================================================================
+Q1: How quickly must a P1 ticket get a first response and be resolved?
+    top-3 chunks -> parent docs : ['02_sla_by_severity', '02_sla_by_severity', '02_sla_by_severity']
+    after dedup (retrieved)    : ['02_sla_by_severity']
+    relevant (gold)            : ['02_sla_by_severity']
+    relevant ∩ retrieved       : ['02_sla_by_severity']
+    P = 1/1 = 1.00   R = 1/1 = 1.00
+Q2: Who has to approve a refund above INR 2,000?
+    top-3 chunks -> parent docs : ['04_refund_compensation', '04_refund_compensation', '10_vip_handling']
+    after dedup (retrieved)    : ['04_refund_compensation', '10_vip_handling']
+    relevant (gold)            : ['03_escalation_matrix', '04_refund_compensation']
+    relevant ∩ retrieved       : ['04_refund_compensation']
+    P = 1/2 = 0.50   R = 1/2 = 0.50
+Q3: What compensation do I get if my driver arrives 20 minutes late?
+    top-3 chunks -> parent docs : ['08_service_credits', '04_refund_compensation', '07_repeat_complaints']
+    after dedup (retrieved)    : ['08_service_credits', '04_refund_compensation', '07_repeat_complaints']
+    relevant (gold)            : ['04_refund_compensation', '08_service_credits']
+    relevant ∩ retrieved       : ['08_service_credits', '04_refund_compensation']
+    P = 2/3 = 0.67   R = 2/2 = 1.00
+Q4: How does Ola keep customers informed during an outage?
+    top-3 chunks -> parent docs : ['05_communication_channels', '11_outage_communication', '11_outage_communication']
+    after dedup (retrieved)    : ['05_communication_channels', '11_outage_communication']
+    relevant (gold)            : ['11_outage_communication']
+    relevant ∩ retrieved       : ['11_outage_communication']
+    P = 1/2 = 0.50   R = 1/1 = 1.00
+Q5: How long are closed tickets stored, and can I ask for mine to be deleted?
+    top-3 chunks -> parent docs : ['12_data_retention', '12_data_retention', '12_data_retention']
+    after dedup (retrieved)    : ['12_data_retention']
+    relevant (gold)            : ['12_data_retention']
+    relevant ∩ retrieved       : ['12_data_retention']
+    P = 1/1 = 1.00   R = 1/1 = 1.00
+
+Mean precision = (1.00 + 0.50 + 0.67 + 0.50 + 1.00) / 5 = 0.733
+Mean recall    = (1.00 + 0.50 + 1.00 + 1.00 + 1.00) / 5 = 0.900
+
+====================================================================================================
+Collection          mean precision  mean recall
+ola_kb_fixed                 0.700        0.800
+ola_kb_sentence              0.733        0.900
+
+RECOMMENDATION
+I recommend deploying the sentence-based collection (ola_kb_sentence): on the same 5 queries it scored mean precision 0.733 vs 0.700 and mean recall 0.900 vs 0.800 for fixed-size chunks, and the gap comes from Q3, where only sentence chunks retrieved both the service-credit and the refund/compensation policy (R = 2/2 vs 1/2). Sentence chunks also gave the wider in-scope vs out-of-scope similarity gap during Task 4 calibration (+0.179 vs +0.146), which makes the 0.37 "I don't know" threshold safer, and because every chunk is one complete policy statement, grounded answers never start or stop mid-sentence.
+
+Deployed collection for Parts 2-4: config.DEPLOYED_COLLECTION = 'ola_kb_sentence'
