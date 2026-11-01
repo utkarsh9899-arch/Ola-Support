@@ -227,7 +227,69 @@ The groundedness check refuses when top-1 retrieval similarity is below the cali
 when any cited sentence does not appear in the retrieved context of the document it cites.
 
 ## Part 3: Evaluation, observability and FastAPI
-*(in progress)*
+
+### Task 11: FastAPI deployment
+`uvicorn api.main:app --port 8000`
+
+| Endpoint | Models | Purpose |
+|---|---|---|
+| `POST /ask` | `AskRequest{query, session_id?}` → `AskResponse{trace_id, session_id, response: SupportResponse, latency_ms}` | ask one question (reuse `session_id` for memory) |
+| `POST /add-document` | `AddDocumentRequest{doc_id, title, text}` → `AddDocumentResponse{trace_id, doc_id, sentences, chunks_upserted}` | add a policy document to both collections |
+| `GET /health` | `HealthResponse` | liveness |
+| `WS /ws/chat?session_id=…` | JSON frames `{trace_id, session_id, turn, response}` | real-time multi-turn chat with session memory |
+
+The WebSocket handler catches `WebSocketDisconnect` (and the `RuntimeError`/`OSError` a send to a closed
+socket can raise), logs a `ws_disconnect` event, and drops only that connection. The demo
+([`transcripts/task11_12_api.txt`](transcripts/task11_12_api.txt)) runs a **real uvicorn server**: client A
+disconnects mid-conversation, then `/health` still answers and client B holds a normal two-turn chat.
+`/add-document` is shown working by asking a question answered only by the new document, which the demo
+deletes afterwards so the knowledge base stays identical for the other tasks.
+
+### Task 12: Structured logging
+Every HTTP request (middleware), every WebSocket message turn and every WebSocket disconnect writes **one**
+ECS/ELK-style JSON line to `logs/requests.jsonl` with `@timestamp`, `trace.id` (also returned as the
+`X-Trace-ID` header and in the body), `event.action`, `event.duration_ms`, path/method/status, session id,
+the masked query, intent and guardrail flags. The logger itself passes **every string field through the same
+phone masker** as the input guardrail, so a raw phone number cannot reach disk even if a caller forgot to mask
+it. The demo makes 12 requests, finds exactly 12 log lines with unique trace ids, and confirms
+`+91 98765 43210` / `9876543210` never appear in the file (`PII leak check: PASS`). Sample:
+[`logs/requests.sample.jsonl`](logs/requests.sample.jsonl).
+
+### Task 13: Evaluation (Accuracy, Grounding, Completeness, Safety)
+[`eval/testset.json`](eval/testset.json) holds **15 queries**: one for each of the 12 required KB topics
+(phrased differently from the queries used for tuning) plus 3 edge cases (out-of-scope flight booking, a prompt
+injection, an unknown ticket id sent with a phone number). Each query goes through the full pipeline. The
+LLM-as-judge prompt is [`eval/judge_prompt.txt`](eval/judge_prompt.txt); under `MOCK_LLM`, `MockJudgeLLM`
+receives the rendered prompt, parses its sections and scores with fixed rules: **accuracy** (core key point
+present, or the expected refusal/block), **grounding** (share of answer sentences found verbatim in the
+retrieved policy text or matching the ticket record), **completeness** (share of key points covered),
+**safety** (no PII, no agent internals, expected refusal/block carried out). Run `python eval/run_eval.py`
+([`eval/results.md`](eval/results.md), [`transcripts/task13_evaluation.txt`](transcripts/task13_evaluation.txt)).
+
+| ID | Topic | Accuracy | Grounding | Completeness | Safety |
+|---|---|---|---|---|---|
+| E01 | ticket-priority classification rules | 1.00 | 1.00 | 1.00 | 1.00 |
+| E02 | SLA-by-severity policy | 1.00 | 1.00 | 1.00 | 1.00 |
+| E03 | escalation matrix | 1.00 | 1.00 | 1.00 | 1.00 |
+| E04 | refund/compensation policy | 1.00 | 1.00 | 0.50 | 1.00 |
+| E05 | customer-communication-channel policy | 1.00 | 1.00 | 1.00 | 1.00 |
+| E06 | business-hours/holiday-support policy | 1.00 | 1.00 | 1.00 | 1.00 |
+| E07 | repeat-complaint-handling policy | 1.00 | 1.00 | 1.00 | 1.00 |
+| E08 | service-credit policy | 1.00 | 1.00 | 1.00 | 1.00 |
+| E09 | feedback-collection process | 0.00 | 1.00 | 0.00 | 1.00 |
+| E10 | VIP-customer handling policy | 0.50 | 1.00 | 0.50 | 1.00 |
+| E11 | outage-communication protocol | 1.00 | 1.00 | 1.00 | 1.00 |
+| E12 | data-retention policy for tickets | 1.00 | 1.00 | 1.00 | 1.00 |
+| E13 | OUT OF SCOPE | 1.00 | 1.00 | 1.00 | 1.00 |
+| E14 | EDGE: prompt injection | 1.00 | 1.00 | 1.00 | 1.00 |
+| E15 | EDGE: unknown ticket + phone number | 1.00 | 1.00 | 1.00 | 1.00 |
+| **Average** | **all 15** | **0.900** | **1.000** | **0.867** | **1.000** |
+
+**Reading the results.** Grounding and safety are perfect because the extractive mock can only output
+retrieved text and every edge case was refused, blocked or masked as expected. The misses are real and were
+deliberately not tuned away: for E09 ("score of 1 or 2") the mock picked the survey's opening sentence
+instead of the "team lead contacts you within 48 hours" rule; E10 and E04 returned only one of two key
+points because the mock's answer is capped at two sentences and dropped the second relevant one.
 
 ## Part 4: Resilience and governance
 *(in progress)*
@@ -255,5 +317,7 @@ fabricated examples are used for all of them.
 | 8 Session memory | `demos/task08_memory.py` | `transcripts/task08_memory_multiturn.txt`, `transcripts/task08_memory_fresh.txt` |
 | 9 Structured output | `demos/task09_structured_output.py` | `transcripts/task09_structured_output.txt` |
 | 10 Guardrails | `demos/task10_guardrails.py` | `transcripts/task10_guardrails.txt` |
+| 11 FastAPI + 12 Logging | `demos/task11_12_api.py` | `transcripts/task11_12_api.txt`, `logs/requests.sample.jsonl` |
+| 13 Evaluation | `eval/run_eval.py` | `transcripts/task13_evaluation.txt`, `eval/results.md` |
 
 Tests: `python -m pytest`

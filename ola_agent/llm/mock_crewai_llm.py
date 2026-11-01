@@ -34,6 +34,7 @@ SLOT_RE = {
     "record_id": re.compile(r"^TICKET_ID:\s*(.+)$", re.M),
     "query": re.compile(r"^POLICY_QUESTION:\s*(.+)$", re.M),
 }
+NOT_FOUND_HINT = "Please check the id and try again."  # fixed helper sentence; makes no factual claim
 ACTION_INPUT_MARK = "Action Input:"
 OBSERVATION_MARK = "Observation:"
 NONE_VALUES = {"", "NONE", "N/A"}
@@ -172,7 +173,7 @@ class MockCrewLLM(BaseLLM):
                            recommend_escalation=ticket["recommend_escalation"])
             intent = "ticket_status"
         elif ticket:
-            parts.append(f"I couldn't find a support ticket with id {ticket['record_id']}. Please check the id and try again.")
+            parts.append(f"I couldn't find a support ticket with id {ticket['record_id']}. {NOT_FOUND_HINT}")
             intent = "ticket_status"
 
         if rag and not rag.get("fallback"):
