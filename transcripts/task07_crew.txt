@@ -1,0 +1,51 @@
+# Transcript: task07_crew
+# MOCK_LLM=1  generated 2026-11-01T21:55:12
+
+MOCK_LLM=True  CREWAI_DISABLE_TELEMETRY=true
+
+Crew agents and their tools:
+  - Retrieval Agent    tools=['ola_policy_rag_search']  llm=MockCrewLLM
+  - Lookup Agent       tools=['check_support_ticket_status']  llm=MockCrewLLM
+  - Response Composer  tools=[]  llm=MockCrewLLM
+Process: Process.sequential
+
+====================================================================================================
+Query 1: Who has to approve a refund above INR 2,000?
+  slots -> TICKET_ID=NONE | POLICY_QUESTION=Who has to approve a refund above INR 2,000?
+  [Retrieval Agent] {"source": "kb_retrieval", "query": "Who has to approve a refund above INR 2,000?", "answer": "Refunds above INR 2,000 require approval from the city operations...
+  [Lookup Agent] {"skipped": true, "reason": "no input for this agent's tools"}
+  [Response Composer] {"answer": "Refunds above INR 2,000 require approval from the city operations manager before they are processed. [04_refund_compensation]", "intent": "policy", ...
+  Retrieval Agent mock-LLM calls: ['action', 'final_from_observation']
+  Lookup Agent mock-LLM calls: ['skip']
+  Response Composer mock-LLM calls: ['compose']
+  TOOLS INVOKED during this kickoff: {'ola_policy_rag_search': 1}
+  SupportResponse schema valid: True  (crew pydantic output: SupportResponse)
+  FINAL ANSWER: Refunds above INR 2,000 require approval from the city operations manager before they are processed. [04_refund_compensation]
+
+====================================================================================================
+Query 2: What is the status of ticket OLA-T-0044?
+  slots -> TICKET_ID=OLA-T-0044 | POLICY_QUESTION=NONE
+  [Retrieval Agent] {"skipped": true, "reason": "no input for this agent's tools"}
+  [Lookup Agent] {"source": "ticket_lookup", "record_id": "OLA-T-0044", "found": true, "status": "Escalated", "priority": "P3", "category": "Account Access", "resolution_time_ho...
+  [Response Composer] {"answer": "Ticket OLA-T-0044 is currently Escalated (priority P3, Account Access), with a resolution time of 10.5 hours. Its escalation score is 0.973 against ...
+  Retrieval Agent mock-LLM calls: ['skip']
+  Lookup Agent mock-LLM calls: ['action', 'final_from_observation']
+  Response Composer mock-LLM calls: ['compose']
+  TOOLS INVOKED during this kickoff: {'check_support_ticket_status': 1}
+  SupportResponse schema valid: True  (crew pydantic output: SupportResponse)
+  FINAL ANSWER: Ticket OLA-T-0044 is currently Escalated (priority P3, Account Access), with a resolution time of 10.5 hours. Its escalation score is 0.973 against a threshold of 0.27, so escalation is recommended.
+
+====================================================================================================
+Query 3: Ticket OLA-T-0016 is still open. What happens if I complain about the same issue three times?
+  slots -> TICKET_ID=OLA-T-0016 | POLICY_QUESTION=What happens if I complain about the same issue three times?
+  [Retrieval Agent] {"source": "kb_retrieval", "query": "What happens if I complain about the same issue three times?", "answer": "If a single driver is the subject of three repeat...
+  [Lookup Agent] {"source": "ticket_lookup", "record_id": "OLA-T-0016", "found": true, "status": "In Progress", "priority": "P2", "category": "Account Access", "resolution_time_...
+  [Response Composer] {"answer": "Ticket OLA-T-0016 is currently In Progress (priority P2, Account Access), with a resolution time of 14.0 hours. Its escalation score is 1.0 against ...
+  Retrieval Agent mock-LLM calls: ['action', 'final_from_observation']
+  Lookup Agent mock-LLM calls: ['action', 'final_from_observation']
+  Response Composer mock-LLM calls: ['compose']
+  TOOLS INVOKED during this kickoff: {'ola_policy_rag_search': 1, 'check_support_ticket_status': 1}
+  SupportResponse schema valid: True  (crew pydantic output: SupportResponse)
+  FINAL ANSWER: Ticket OLA-T-0016 is currently In Progress (priority P2, Account Access), with a resolution time of 14.0 hours. Its escalation score is 1.0 against a threshold of 0.27, so escalation is recommended. If a single driver is the subject of three repeat complaints within 30 days, that driver's account is flagged for a quality review by the city operations team. [07_repeat_complaints] A complaint counts as a repeat complaint when the same customer raises the same category of issue three or more times within 30 days. [07_repeat_complaints]
+
+Cumulative tool calls: {'ola_policy_rag_search': 2, 'check_support_ticket_status': 2}

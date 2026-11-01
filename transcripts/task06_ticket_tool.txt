@@ -1,0 +1,31 @@
+# Transcript: task06_ticket_tool
+# MOCK_LLM=1  generated 2026-11-01T21:48:28
+
+escalation_score = 0.6 * escalated + 0.4 * min(days_since_created / 30, 1)
+
+days_since_created distribution in the generated dataset (SEED=42, N=48):
+  P10=3  P20=6  P30=8  P40=9  P50=14  P60=16  P70=18  P80=20  P90=25.3
+
+Threshold = 0.4 * P80 / 30 = 0.4 * 20 / 30 = 0.2667 -> 0.27
+  -> every escalated ticket (score >= 0.6) is above the threshold;
+  -> a non-escalated ticket is above it only when older than the 80th percentile (21+ days);
+  -> Resolved/Closed tickets are never recommended for escalation.
+
+Score distribution: min=0.027  median=0.22  max=1.0
+Tickets with score >= 0.27: 16/48; recommended for escalation (excluding Resolved/Closed): 13/48
+
+check_support_ticket_status('OLA-T-0005')
+  -> {'record_id': 'OLA-T-0005', 'found': True, 'status': 'In Progress', 'priority': 'P2', 'category': 'Billing', 'resolution_time_hours': 9.5, 'days_since_created': 8, 'escalated': False, 'escalation_score': 0.107, 'escalation_threshold': 0.27, 'recommend_escalation': False}
+
+check_support_ticket_status('OLA-T-0044')
+  -> {'record_id': 'OLA-T-0044', 'found': True, 'status': 'Escalated', 'priority': 'P3', 'category': 'Account Access', 'resolution_time_hours': 10.5, 'days_since_created': 28, 'escalated': True, 'escalation_score': 0.973, 'escalation_threshold': 0.27, 'recommend_escalation': True}
+
+check_support_ticket_status('OLA-T-0016')
+  -> {'record_id': 'OLA-T-0016', 'found': True, 'status': 'In Progress', 'priority': 'P2', 'category': 'Account Access', 'resolution_time_hours': 14.0, 'days_since_created': 30, 'escalated': True, 'escalation_score': 1.0, 'escalation_threshold': 0.27, 'recommend_escalation': True}
+
+check_support_ticket_status('ola-t-3')
+  -> {'record_id': 'OLA-T-0003', 'found': True, 'status': 'Resolved', 'priority': 'P2', 'category': 'Billing', 'resolution_time_hours': 7.0, 'days_since_created': 18, 'escalated': False, 'escalation_score': 0.24, 'escalation_threshold': 0.27, 'recommend_escalation': False}
+
+check_support_ticket_status('OLA-T-9999')
+  -> {'record_id': 'OLA-T-9999', 'found': False, 'error': "No support ticket found with id 'OLA-T-9999'."}
+
