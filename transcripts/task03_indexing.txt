@@ -1,0 +1,34 @@
+# Transcript: task03_indexing
+# MOCK_LLM=1  generated 2026-11-01T21:32:38
+
+Embedding model: sentence-transformers/all-MiniLM-L6-v2 (local, free)
+Strategy A - fixed-size: 200 chars, 50 chars overlap (edges snapped to spaces)
+Strategy B - sentence-based: one sentence per chunk
+
+Example chunks of 02_sla_by_severity [fixed]:
+  02_sla_by_severity::fixed::0         (197 chars) Ola's service-level agreement sets a first-response time and a resolution target for every priority level. P1 tickets must receive a first response within 15 minutes and be resolved within 4 hours.
+  02_sla_by_severity::fixed::1         (190 chars) within 15 minutes and be resolved within 4 hours. P2 tickets must receive a first response within 1 hour and be resolved within 24 hours. P3 tickets get a first response within 4 hours and a
+  02_sla_by_severity::fixed::2         (198 chars) tickets get a first response within 4 hours and a resolution within 48 hours, while P4 tickets get a first response within 24 hours and a resolution within 72 hours. An SLA breach occurs when either
+  02_sla_by_severity::fixed::3         (154 chars) within 72 hours. An SLA breach occurs when either clock expires without the required action, and every breach is reported in the weekly operations review.
+
+Example chunks of 02_sla_by_severity [sentence]:
+  02_sla_by_severity::sentence::0      (106 chars) Ola's service-level agreement sets a first-response time and a resolution target for every priority level.
+  02_sla_by_severity::sentence::1      ( 90 chars) P1 tickets must receive a first response within 15 minutes and be resolved within 4 hours.
+  02_sla_by_severity::sentence::2      ( 87 chars) P2 tickets must receive a first response within 1 hour and be resolved within 24 hours.
+  02_sla_by_severity::sentence::3      (168 chars) P3 tickets get a first response within 4 hours and a resolution within 48 hours, while P4 tickets get a first response within 24 hours and a resolution within 72 hours.
+  02_sla_by_severity::sentence::4      (137 chars) An SLA breach occurs when either clock expires without the required action, and every breach is reported in the weekly operations review.
+
+collection.upsert() -> ola_kb_fixed: 48 chunks (collection.count() = 48)
+collection.upsert() -> ola_kb_sentence: 55 chunks (collection.count() = 55)
+
+Sample query: 'How long does a P1 ticket have to be resolved?'
+
+  Top-3 from ola_kb_fixed:
+    sim=0.6942  02_sla_by_severity         within 15 minutes and be resolved within 4 hours. P2 tickets must receive a first response
+    sim=0.6658  02_sla_by_severity         tickets get a first response within 4 hours and a resolution within 48 hours, while P4 tic
+    sim=0.6382  02_sla_by_severity         Ola's service-level agreement sets a first-response time and a resolution target for every
+
+  Top-3 from ola_kb_sentence:
+    sim=0.7738  02_sla_by_severity         P1 tickets must receive a first response within 15 minutes and be resolved within 4 hours.
+    sim=0.7129  02_sla_by_severity         P2 tickets must receive a first response within 1 hour and be resolved within 24 hours.
+    sim=0.6618  02_sla_by_severity         P3 tickets get a first response within 4 hours and a resolution within 48 hours, while P4 

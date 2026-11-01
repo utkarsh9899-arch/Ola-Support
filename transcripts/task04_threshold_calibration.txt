@@ -1,0 +1,24 @@
+# Transcript: task04_threshold_calibration
+# MOCK_LLM=1  generated 2026-11-01T21:33:28
+
+kind  query                                                              ola_kb_fixed  ola_kb_sentence
+in    What is the resolution target for a P2 ticket?                           0.5998           0.6471
+in    When does an L1 agent have to escalate a ticket?                         0.7464           0.7078
+in    Can I get my refund in my Ola Money wallet?                              0.5644           0.6622
+in    Which channels does Ola support use to contact customers?                0.7377           0.7097
+in    Is support available on Diwali?                                          0.4321           0.4861
+in    What happens if I complain about the same issue three times?             0.5986           0.6221
+in    How much service credit can I get in a month?                            0.6204           0.6460
+in    How long are support tickets kept before deletion?                       0.7238           0.7840
+out   What will the weather be like in Mumbai tomorrow?                        0.2274           0.2145
+out   Who won the cricket match yesterday?                                     0.1967           0.1829
+out   Give me a recipe for paneer butter masala.                               0.0365           0.0529
+out   Write a Python function to reverse a linked list.                        0.1115           0.1647
+out   What is the capital of Australia?                                        0.1190           0.1088
+out   What is Ola's share price today?                                         0.2863           0.3072
+
+ola_kb_fixed: in-scope top-1 range 0.4321-0.7464 | out-of-scope range 0.0365-0.2863 | gap +0.1458
+ola_kb_sentence: in-scope top-1 range 0.4861-0.7840 | out-of-scope range 0.0529-0.3072 | gap +0.1789
+
+Across both collections: lowest in-scope = 0.4321, highest out-of-scope = 0.3072
+Clusters separate. Midpoint threshold = (0.3072 + 0.4321) / 2 = 0.3696

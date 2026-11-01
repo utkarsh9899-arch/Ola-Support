@@ -38,8 +38,12 @@ COLLECTION_FIXED = "ola_kb_fixed"
 COLLECTION_SENTENCE = "ola_kb_sentence"
 TOP_K = 3
 
-# Filled in after empirical calibration (Task 4) and chunking evaluation (Task 5).
-SIMILARITY_THRESHOLD: float | None = None
+# Empirically calibrated in demos/task04_calibrate.py (transcripts/task04_threshold_calibration.txt):
+# lowest in-scope top-1 = 0.4321, highest out-of-scope top-1 = 0.3072 across both
+# collections -> midpoint (0.3072 + 0.4321) / 2 = 0.3696, rounded to 0.37.
+SIMILARITY_THRESHOLD: float = 0.37
+
+# Filled in after the chunking evaluation (Task 5).
 DEPLOYED_COLLECTION: str | None = None
 
 # --- Runtime governance (Task 15) --------------------------------------------
