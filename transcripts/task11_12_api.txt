@@ -1,0 +1,59 @@
+# Transcript: task11_12_api
+# MOCK_LLM=1  generated 2026-11-01T22:11:16
+
+uvicorn serving api.main:app on http://127.0.0.1:8765 (MOCK_LLM=True)
+
+====================================================================================================
+TASK 11 - HTTP endpoints (Pydantic request/response models)
+====================================================================================================
+GET  /health -> HTTP 200  X-Trace-ID=3fef8e0bb06643ba82de99174cc7bc5b
+{'status': 'ok', 'mock_llm': True}
+POST /ask -> HTTP 200  X-Trace-ID=2f9e8e6d098b479fbcc2b1874236a584
+  request : {'query': 'Hi, my phone is +91 98765 43210. What is the status of ticket OLA-T-0044?'}
+  response: {"answer": "Ticket OLA-T-0044 is currently Escalated (priority P3, Account Access), with a resolution time of 10.5 hours. Its escalation score is 0.973 against a threshold of 0.27, so escalation is recommended.", "intent": "ticket_status", "sources": [], "record_id": "OLA-T-0044", "ticket_status": "Escalated", "escalation_score": 0.973, "recommend_escalation": true, "grounded": true, "refused": fa...
+
+POST /add-document -> HTTP 200  X-Trace-ID=41b007fc26274c6699e091a8465d1be3
+  {'trace_id': '41b007fc26274c6699e091a8465d1be3', 'doc_id': '13_lost_item_policy', 'sentences': 3, 'chunks_upserted': {'ola_kb_fixed': 2, 'ola_kb_sentence': 3}}
+POST /ask (uses the new document) -> HTTP 200  X-Trace-ID=76c3eb2310f4419b918d8eb4af9f5052
+  answer: Riders who leave an item in a cab can report it from the trip details screen within 24 hours. [13_lost_item_policy]
+
+POST /ask with empty query -> HTTP 422 (Pydantic validation): String should have at least 1 character
+
+====================================================================================================
+TASK 11 - WebSocket /ws/chat, client disconnects mid-conversation
+====================================================================================================
+client A turn 1 <- Ticket OLA-T-0016 is currently In Progress (priority P2, Account Access), with a resolution time of 14.0 hours...
+client A sent turn 2 and DISCONNECTED before reading the reply
+server still alive? GET /health -> {'status': 'ok', 'mock_llm': True}
+client B turn 1 -> What is the status of ticket OLA-T-0005?
+                <- Ticket OLA-T-0005 is currently In Progress (priority P2, Billing), with a resolution time of 9.5 hours. Its es...
+client B turn 2 -> Should it be escalated?
+                <- Ticket OLA-T-0005 is currently In Progress (priority P2, Billing), with a resolution time of 9.5 hours. Its es...
+
+(cleanup: removed demo document chunks {'ola_kb_fixed': 2, 'ola_kb_sentence': 3})
+
+====================================================================================================
+TASK 12 - structured JSON-Lines log: logs\requests.jsonl
+====================================================================================================
+{"@timestamp": "2026-11-01T16:41:40.003+00:00", "log.level": "info", "service.name": "ola-support-agent", "message": "http_request", "trace.id": "3fef8e0bb06643ba82de99174cc7bc5b", "event.action": "http_request", "event.duration_ms": 1.49, "http.request.method": "GET", "url.path": "/health", "http.response.status_code": 200}
+{"@timestamp": "2026-11-01T16:41:46.330+00:00", "log.level": "info", "service.name": "ola-support-agent", "message": "http_request", "trace.id": "2f9e8e6d098b479fbcc2b1874236a584", "event.action": "http_request", "event.duration_ms": 6325.72, "http.request.method": "POST", "url.path": "/ask", "http.response.status_code": 200, "session.id": "http-e6b1f525c6ee", "query.masked": "Hi, my phone is [PHONE_REDACTED]. What is the status of ticket OLA-T-0044?", "response.intent": "ticket_status", "response.refused": false, "guardrail.flags": ["pii_masked:phone x1"]}
+{"@timestamp": "2026-11-01T16:41:46.525+00:00", "log.level": "info", "service.name": "ola-support-agent", "message": "http_request", "trace.id": "41b007fc26274c6699e091a8465d1be3", "event.action": "http_request", "event.duration_ms": 190.32, "http.request.method": "POST", "url.path": "/add-document", "http.response.status_code": 200, "document.id": "13_lost_item_policy"}
+{"@timestamp": "2026-11-01T16:41:46.816+00:00", "log.level": "info", "service.name": "ola-support-agent", "message": "http_request", "trace.id": "76c3eb2310f4419b918d8eb4af9f5052", "event.action": "http_request", "event.duration_ms": 286.4, "http.request.method": "POST", "url.path": "/ask", "http.response.status_code": 200, "session.id": "http-884c284f7d9b", "query.masked": "I left my bag in the cab. How do I get it back?", "response.intent": "policy", "response.refused": false, "guardrail.flags": []}
+{"@timestamp": "2026-11-01T16:41:46.823+00:00", "log.level": "info", "service.name": "ola-support-agent", "message": "http_request", "trace.id": "1f40b48ee0e44746bd35c76885ac6a6e", "event.action": "http_request", "event.duration_ms": 1.27, "http.request.method": "POST", "url.path": "/ask", "http.response.status_code": 422}
+{"@timestamp": "2026-11-01T16:41:47.039+00:00", "log.level": "info", "service.name": "ola-support-agent", "message": "ws_message", "trace.id": "8eb599aafdf64c6baff1e053c2aed339", "event.action": "ws_message", "event.duration_ms": 206.45, "url.path": "/ws/chat", "session.id": "ws-client-A", "query.masked": "What is the status of ticket OLA-T-0016?", "response.intent": "ticket_status", "response.refused": false, "guardrail.flags": [], "ws.turn": 1}
+{"@timestamp": "2026-11-01T16:41:47.312+00:00", "log.level": "info", "service.name": "ola-support-agent", "message": "ws_message", "trace.id": "ef8671c965b6454587c824f4a6610f85", "event.action": "ws_message", "event.duration_ms": 270.68, "url.path": "/ws/chat", "session.id": "ws-client-A", "query.masked": "Should it be escalated?", "response.intent": "ticket_status", "response.refused": false, "guardrail.flags": [], "ws.turn": 2}
+{"@timestamp": "2026-11-01T16:41:47.315+00:00", "log.level": "info", "service.name": "ola-support-agent", "message": "ws_disconnect", "trace.id": "99636e00f909452e9a99168fee658371", "event.action": "ws_disconnect", "event.duration_ms": 0.0, "url.path": "/ws/chat", "session.id": "ws-client-A", "ws.turns_completed": 2, "ws.disconnect": "WebSocketDisconnect"}
+{"@timestamp": "2026-11-01T16:41:50.052+00:00", "log.level": "info", "service.name": "ola-support-agent", "message": "http_request", "trace.id": "f1b4d4fd79c5495bb04947caf1f66783", "event.action": "http_request", "event.duration_ms": 1.33, "http.request.method": "GET", "url.path": "/health", "http.response.status_code": 200}
+{"@timestamp": "2026-11-01T16:41:50.337+00:00", "log.level": "info", "service.name": "ola-support-agent", "message": "ws_message", "trace.id": "461360644b56454fa42d78be30583171", "event.action": "ws_message", "event.duration_ms": 269.24, "url.path": "/ws/chat", "session.id": "ws-client-B", "query.masked": "What is the status of ticket OLA-T-0005?", "response.intent": "ticket_status", "response.refused": false, "guardrail.flags": [], "ws.turn": 1}
+{"@timestamp": "2026-11-01T16:41:50.543+00:00", "log.level": "info", "service.name": "ola-support-agent", "message": "ws_message", "trace.id": "b1ad3798f00b457690667c9668839801", "event.action": "ws_message", "event.duration_ms": 200.7, "url.path": "/ws/chat", "session.id": "ws-client-B", "query.masked": "Should it be escalated?", "response.intent": "ticket_status", "response.refused": false, "guardrail.flags": [], "ws.turn": 2}
+{"@timestamp": "2026-11-01T16:41:50.546+00:00", "log.level": "info", "service.name": "ola-support-agent", "message": "ws_disconnect", "trace.id": "3a3a8f547b84462fb468eb49ce3cae14", "event.action": "ws_disconnect", "event.duration_ms": 0.0, "url.path": "/ws/chat", "session.id": "ws-client-B", "ws.turns_completed": 2, "ws.disconnect": "WebSocketDisconnect"}
+
+log lines: 12  (requests made: 12)
+every line is valid JSON with a trace.id and event.duration_ms: True
+trace ids unique: True
+events: http_request x6, ws_message x4, ws_disconnect x2
+ws disconnects logged (session, turns completed, exception caught): [('ws-client-A', 2, 'WebSocketDisconnect'), ('ws-client-B', 2, 'WebSocketDisconnect')]
+one log entry per request: True
+raw phone '+91 98765 43210' in log file: False; digits '9876543210' in log file: False
+[PHONE_REDACTED] in log file: True  -> PII leak check: PASS
+(copied to logs\requests.sample.jsonl for the repository)

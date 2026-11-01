@@ -66,6 +66,23 @@ def build_index(docs: list[Document] | None = None) -> dict[str, int]:
     return {COLLECTIONS[s]: upsert_chunks(COLLECTIONS[s], chunk_documents(docs, s)) for s in (STRATEGY_FIXED, STRATEGY_SENTENCE)}
 
 
+def add_document(doc: Document) -> dict[str, int]:
+    """Chunk one new document both ways and upsert it into both collections (POST /add-document)."""
+    return build_index([doc])
+
+
+def delete_document(doc_id: str) -> dict[str, int]:
+    """Remove every chunk of one document from both collections."""
+    removed = {}
+    for name in COLLECTIONS.values():
+        col = get_collection(name)
+        ids = col.get(where={"doc_id": doc_id})["ids"]
+        if ids:
+            col.delete(ids=ids)
+        removed[name] = len(ids)
+    return removed
+
+
 def retrieve(query: str, collection_name: str, k: int = config.TOP_K) -> list[Hit]:
     res = get_collection(collection_name).query(query_embeddings=embed([query]), n_results=k)
     return [
