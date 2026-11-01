@@ -1,0 +1,3 @@
+# Business Hours and Holiday Support Policy
+
+Support for safety incidents and trips in progress runs 24 hours a day, 7 days a week, including every public holiday. Non-urgent support for billing, account, and general queries is staffed from 8 AM to 10 PM local time every day. On national holidays such as Diwali, Holi, and Independence Day, non-urgent queues run with reduced staff and the SLA clocks for P3 and P4 tickets pause until the next working day. Tickets raised outside staffed hours receive an automated acknowledgement and enter the queue in priority order when the team comes back online.

@@ -1,0 +1,18 @@
+# Python 3.12 (CrewAI does not install on Python 3.14)
+crewai==1.15.33
+autogen-agentchat==0.7.5
+autogen-core==0.7.5
+langchain-core==1.7.3
+chromadb==1.5.9
+sentence-transformers==6.2.0
+torch==2.15.0
+fastapi==0.162.0
+uvicorn==0.54.0
+pydantic==2.12.5
+httpx==0.28.1
+websockets==17.4
+pytest==9.2.0
+
+# autogen-core 0.7.5 pins protobuf 5.29.x; newer googleapis-common-protos needs protobuf 6
+protobuf==5.29.6
+googleapis-common-protos==1.70.0

@@ -1,0 +1,3 @@
+# Outage Communication Protocol
+
+An outage is declared when bookings, payments, or driver allocation fail for more than 5 percent of requests in a city for 10 minutes or longer. Within 15 minutes of the declaration, the incident commander publishes an in-app banner and a status-page notice naming the affected services and cities. Customer updates are posted every 30 minutes until service is restored, even when there is no new information to share. Support agents must link every outage-related ticket to the master incident instead of troubleshooting each one separately. Within 48 hours of recovery, a summary of the cause and any compensation is sent to affected customers.

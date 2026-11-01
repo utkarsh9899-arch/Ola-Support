@@ -1,0 +1,21 @@
+# Transcript: task02_knowledge_base
+# MOCK_LLM=1  generated 2026-11-01T21:29:19
+
+Knowledge base: 12 documents in kb/
+
+Required topic                           doc_id                       sentences
+ticket-priority classification rules     01_ticket_priority           5
+SLA-by-severity policy                   02_sla_by_severity           5
+escalation matrix                        03_escalation_matrix         5
+refund/compensation policy               04_refund_compensation       5
+customer-communication-channel policy    05_communication_channels    5
+business-hours/holiday-support policy    06_business_hours            4
+repeat-complaint-handling policy         07_repeat_complaints         4
+service-credit policy                    08_service_credits           4
+feedback-collection process              09_feedback_collection       4
+VIP-customer handling policy             10_vip_handling              4
+outage-communication protocol            11_outage_communication      5
+data-retention policy for tickets        12_data_retention            5
+
+All 12 required topics covered: True
+Every document has 2-5 sentences: True

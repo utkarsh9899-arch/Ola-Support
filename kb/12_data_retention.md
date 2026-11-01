@@ -1,0 +1,3 @@
+# Ticket Data Retention Policy
+
+Support tickets and their chat transcripts are retained for 24 months after the ticket is closed, and are then permanently deleted. Tickets connected to safety incidents, legal claims, or regulatory complaints are kept for 7 years instead. Phone numbers in ticket text are masked before storage, and full payment card numbers must never be recorded in a ticket. A customer may request deletion of their closed tickets, which is completed within 30 days unless a legal hold applies. Access to ticket data is limited to the support staff working on the ticket and to auditors with approved access.

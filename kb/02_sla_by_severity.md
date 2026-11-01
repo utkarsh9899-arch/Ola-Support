@@ -1,0 +1,3 @@
+# SLA-by-Severity Policy
+
+Ola's service-level agreement sets a first-response time and a resolution target for every priority level. P1 tickets must receive a first response within 15 minutes and be resolved within 4 hours. P2 tickets must receive a first response within 1 hour and be resolved within 24 hours. P3 tickets get a first response within 4 hours and a resolution within 48 hours, while P4 tickets get a first response within 24 hours and a resolution within 72 hours. An SLA breach occurs when either clock expires without the required action, and every breach is reported in the weekly operations review.

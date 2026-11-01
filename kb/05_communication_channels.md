@@ -1,0 +1,3 @@
+# Customer Communication Channel Policy
+
+Ola support communicates with riders and drivers only through in-app chat, in-app callback, and email. In-app chat is the default channel for every ticket because it keeps a complete written record attached to the ticket. An agent may place an in-app callback for P1 and P2 tickets, but no agent may ever ask for a full card number, PIN, or OTP on any channel. Email is used for refund confirmations, formal escalation updates, and data-retention notices. Support staff must never contact customers from personal phone numbers or through third-party messaging apps.

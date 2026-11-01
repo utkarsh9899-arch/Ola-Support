@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+.pytest_cache/
+chroma_db/
+logs/*.jsonl
+!logs/requests.sample.jsonl
+.vscode/
+.idea/
+
+# personal planning notes (not a deliverable)
+OLA_CAPSTONE_PLAN.md

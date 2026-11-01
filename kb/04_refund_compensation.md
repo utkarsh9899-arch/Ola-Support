@@ -1,0 +1,3 @@
+# Refund and Compensation Policy
+
+Riders are eligible for a full refund when they are charged for a cancelled trip, charged twice for the same trip, or billed for a ride that never started. A partial refund of the difference is issued when the final fare exceeds the upfront estimate by more than 20 percent and the rider did not request a route change. Approved refunds return to the original payment method within 5 to 7 business days, or instantly to the Ola Money wallet if the rider chooses that option. Compensation for a poor experience, such as a rude driver or an unclean vehicle, is given as service credits rather than cash. Refunds above INR 2,000 require approval from the city operations manager before they are processed.

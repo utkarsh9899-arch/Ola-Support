@@ -1,0 +1,39 @@
+# Transcript: task01_dataset
+# MOCK_LLM=1  generated 2026-11-01T21:29:44
+
+Ola support-ticket dataset  (SEED=42, N=48)
+
+Count per category:
+  Billing           15   (weight 0.30)
+  Technical Issue    7   (weight 0.22)
+  Account Access    10   (weight 0.16)
+  Product Defect     7   (weight 0.14)
+  General Inquiry    9   (weight 0.18)
+
+Count per status:
+  Open              12   (weight 0.25)
+  In Progress        9   (weight 0.25)
+  Escalated          5   (weight 0.12)
+  Resolved          11   (weight 0.23)
+  Closed            11   (weight 0.15)
+
+Count per priority:
+  P1                 4   (weights depend on category)
+  P2                19   (weights depend on category)
+  P3                19   (weights depend on category)
+  P4                 6   (weights depend on category)
+
+Escalated: 9/48 = 18.8%  (required band 10-30%)
+resolution_time_hours observed: 1.5-72.0  (design range 0.5-72)
+fare_amount_inr observed: 63-1465  (design range 50-1500)
+
+Validation: PASS - all structural thresholds met
+
+Determinism check (regenerate with same seed -> identical): True
+
+First 5 records:
+  {'record_id': 'OLA-T-0001', 'category': 'Account Access', 'status': 'Open', 'priority': 'P2', 'resolution_time_hours': 7.0, 'days_since_created': 23, 'escalated': False, 'fare_amount_inr': 1166}
+  {'record_id': 'OLA-T-0002', 'category': 'Billing', 'status': 'In Progress', 'priority': 'P2', 'resolution_time_hours': 7.0, 'days_since_created': 16, 'escalated': False, 'fare_amount_inr': 1199}
+  {'record_id': 'OLA-T-0003', 'category': 'Billing', 'status': 'Resolved', 'priority': 'P2', 'resolution_time_hours': 7.0, 'days_since_created': 18, 'escalated': False, 'fare_amount_inr': 63}
+  {'record_id': 'OLA-T-0004', 'category': 'Product Defect', 'status': 'Open', 'priority': 'P3', 'resolution_time_hours': 17.5, 'days_since_created': 6, 'escalated': False, 'fare_amount_inr': 739}
+  {'record_id': 'OLA-T-0005', 'category': 'Billing', 'status': 'In Progress', 'priority': 'P2', 'resolution_time_hours': 9.5, 'days_since_created': 8, 'escalated': False, 'fare_amount_inr': 990}

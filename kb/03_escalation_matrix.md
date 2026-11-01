@@ -1,0 +1,3 @@
+# Escalation Matrix
+
+Tickets move through four escalation levels: the L1 frontline agent, the L2 senior specialist, the city operations manager, and finally the regional support head. An L1 agent must escalate a ticket to L2 when it reaches 75 percent of its SLA resolution time without a fix. L2 escalates to the city operations manager for any P1 safety incident, any refund above INR 2,000, or any ticket that has been reopened twice. The regional support head is engaged only for incidents involving legal notices, media attention, or more than 500 affected users. Every escalation must record the reason, the time of handover, and the new owner in the ticket history.
